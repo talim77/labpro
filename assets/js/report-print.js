@@ -59,39 +59,54 @@ class ReportPrintManager {
       return [reports]; // Fits on 1 Page!
     }
 
-    // Distribute into multiple pages without ever splitting a test
+    // Smart Multi-Page Best-Fit Packing:
+    // If a large test (e.g. Urine Routine) does not fit in the remaining space of the current page,
+    // look-ahead through remaining tests to find smaller tests (e.g. HbA1c, PPBS) that DO fit,
+    // avoiding awkward blank gaps on Page 1 while strictly keeping every test intact.
     const pages = [];
-    let currentPageTests = [];
-    let currentUsedHeight = 0;
+    let remaining = [...reports];
     let isFirstPage = true;
 
-    for (let i = 0; i < reports.length; i++) {
-      const rep = reports[i];
-      const testH = this.calculateTestHeightMM(rep);
-
+    while (remaining.length > 0) {
       const headerH = isFirstPage ? PAGE1_HEADER_HEIGHT : PAGE2_HEADER_HEIGHT;
-      const isRemainingLast = (i === reports.length - 1);
-      const neededBottomRoom = isRemainingLast ? SIGNATURES_FOOTER_HEIGHT : CONTINUED_NOTE_HEIGHT;
-      const pageCapacity = USABLE_PAGE_HEIGHT - headerH - neededBottomRoom;
+      const totalRemainingHeight = remaining.reduce((sum, r) => sum + this.calculateTestHeightMM(r), 0);
+      const singleOrLastCapacity = USABLE_PAGE_HEIGHT - headerH - SIGNATURES_FOOTER_HEIGHT;
 
-      if (currentUsedHeight + testH <= pageCapacity || currentPageTests.length === 0) {
-        // Fits on this page (or first item on a fresh page)
-        currentPageTests.push(rep);
-        currentUsedHeight += testH;
-      } else {
-        // DOES NOT FIT! Push entire test to next page (Never split test parameters!)
-        pages.push(currentPageTests);
-        currentPageTests = [rep];
-        currentUsedHeight = testH;
-        isFirstPage = false;
+      // If all remaining tests fit along with doctor/technologist signatures, close document
+      if (totalRemainingHeight <= singleOrLastCapacity) {
+        pages.push(remaining);
+        break;
       }
+
+      // Intermediate page: Needs space for ">>> Report continued on Page X >>>" footer note
+      const intermediateCapacity = USABLE_PAGE_HEIGHT - headerH - CONTINUED_NOTE_HEIGHT;
+      const pageTests = [];
+      let usedHeight = 0;
+      const nextRemaining = [];
+
+      for (let i = 0; i < remaining.length; i++) {
+        const rep = remaining[i];
+        const testH = this.calculateTestHeightMM(rep);
+
+        if (usedHeight + testH <= intermediateCapacity) {
+          pageTests.push(rep);
+          usedHeight += testH;
+        } else if (pageTests.length === 0) {
+          // If a single massive test exceeds page capacity, let it occupy this sheet
+          pageTests.push(rep);
+          usedHeight += testH;
+        } else {
+          // Defer to next page
+          nextRemaining.push(rep);
+        }
+      }
+
+      pages.push(pageTests);
+      remaining = nextRemaining;
+      isFirstPage = false;
     }
 
-    if (currentPageTests.length > 0) {
-      pages.push(currentPageTests);
-    }
-
-    return pages;
+    return pages.length > 0 ? pages : [[]];
   }
 
   /**
