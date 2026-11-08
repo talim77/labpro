@@ -1,0 +1,371 @@
+/* ==========================================================================
+   Offline Lab Management System - Multi-Page A4 Print Engine
+   Supports:
+   - Multiple distinct A4 sheets (Page 1, Page 2, etc.)
+   - Test Integrity: Entire test parameters stay together on one page
+   - Full Metadata on every page (Patient details + Headers)
+   - Zero Scrollbars & Exact A4 Dimensions (210mm x 297mm)
+   ========================================================================== */
+
+/* Universal Box-Sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Screen Preview Container for Multi-Page Report */
+.report-preview-container,
+.print-page-wrapper {
+  background: #cbd5e1;
+  padding: 24px 0 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: calc(100vh - 60px);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Multi-Page A4 Sheet Definition */
+.a4-page-sheet {
+  background: #ffffff;
+  width: 210mm;
+  min-height: 297mm;
+  max-height: 297mm;
+  box-sizing: border-box;
+  padding: 10mm 14mm;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  margin: 0 auto 28px auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #0f172a;
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  overflow: hidden;
+  page-break-after: always;
+  break-after: page;
+}
+
+.a4-page-sheet:last-child {
+  margin-bottom: 0;
+  page-break-after: auto;
+  break-after: auto;
+}
+
+/* Header Section (Page 1) */
+.report-header {
+  border-bottom: 2px solid #0284c7;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.report-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.report-lab-logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.report-lab-info h1 {
+  font-size: 19px;
+  font-weight: 800;
+  color: #0369a1;
+  margin: 0;
+  line-height: 1.1;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.report-lab-info p.tagline {
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+  margin: 1px 0 2px;
+}
+
+.report-lab-info p.contact-line {
+  font-size: 9.5px;
+  color: #334155;
+  margin: 1px 0;
+}
+
+.report-header-right {
+  text-align: right;
+  font-size: 10px;
+  color: #475569;
+}
+
+.report-header-right .reg-badge {
+  display: inline-block;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 9.5px;
+  color: #0f172a;
+  margin-bottom: 2px;
+}
+
+/* Patient Demographics Box (Repeated on Every Page) */
+.patient-meta-grid {
+  border: 1px solid #94a3b8;
+  border-radius: 4px;
+  background: #f8fafc;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font-size: 9.5px;
+  margin-bottom: 6px;
+  padding: 4px 8px;
+  gap: 2px 14px;
+}
+
+.meta-row {
+  display: flex;
+}
+
+.meta-label {
+  width: 105px;
+  font-weight: 700;
+  color: #475569;
+  flex-shrink: 0;
+}
+
+.meta-val {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* Department / Test Title */
+.report-title-banner {
+  text-align: center;
+  background: #0284c7;
+  color: #ffffff;
+  padding: 2.5px 6px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  border-radius: 2px;
+}
+
+/* Pathology Results Table */
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9.5px;
+  margin-bottom: 6px;
+}
+
+.results-table th {
+  background: #f1f5f9;
+  border-top: 1px solid #94a3b8;
+  border-bottom: 1.5px solid #0f172a;
+  padding: 3px 5px;
+  text-align: left;
+  font-weight: 700;
+  color: #0f172a;
+  text-transform: uppercase;
+  font-size: 9px;
+}
+
+.results-table td {
+  padding: 2.5px 5px;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
+  line-height: 1.25;
+}
+
+.results-table tr.test-category-row td {
+  background: #f8fafc;
+  font-weight: 700;
+  color: #0369a1;
+  font-size: 10px;
+  border-bottom: 1px solid #cbd5e1;
+  padding: 3px 5px;
+}
+
+.results-table .param-name {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.results-table .param-value {
+  font-weight: 700;
+  font-size: 10px;
+}
+
+.results-table .param-value.abnormal-high,
+.results-table .param-value.abnormal-low {
+  color: #b91c1c;
+  text-decoration: underline;
+}
+
+.results-table .param-units {
+  color: #475569;
+}
+
+.results-table .param-range {
+  color: #334155;
+  white-space: pre-line;
+}
+
+.results-table .param-flag {
+  font-weight: 800;
+  font-size: 9px;
+}
+
+.results-table .param-flag.high { color: #b91c1c; }
+.results-table .param-flag.low { color: #d97706; }
+.results-table .param-flag.normal { color: #16a34a; }
+
+/* End of report note */
+.report-end-mark {
+  text-align: center;
+  font-size: 8.5px;
+  color: #64748b;
+  font-style: italic;
+  margin: 4px 0;
+  border-top: 1px dashed #cbd5e1;
+  padding-top: 3px;
+}
+
+/* Signature & Authorization Section */
+.report-footer-signatures {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-top: 8px;
+  margin-top: auto;
+  border-top: 1px solid #e2e8f0;
+}
+
+.signature-block {
+  text-align: center;
+  min-width: 120px;
+}
+
+.signature-line {
+  border-top: 1px solid #475569;
+  margin-top: 14px;
+  padding-top: 2px;
+}
+
+.signature-name {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.signature-role {
+  font-size: 8px;
+  color: #64748b;
+}
+
+/* Lab Disclaimer Bottom */
+.report-bottom-disclaimer {
+  margin-top: 4px;
+  border-top: 1px solid #cbd5e1;
+  padding-top: 2px;
+  font-size: 7.5px;
+  color: #64748b;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Mode 2 Letterhead styling */
+.letterhead-mode .report-header {
+  display: none !important;
+}
+
+.letterhead-mode .report-bottom-disclaimer {
+  display: none !important;
+}
+
+/* ==========================================================================
+   CRITICAL: PRINT MEDIA RULES (Multi-Page A4 Precision)
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0; /* Let .a4-page-sheet padding define printable margins */
+  }
+
+  *, *::before, *::after {
+    box-shadow: none !important;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 210mm !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Hide entire App shell & UI controls */
+  #app-container,
+  .sidebar,
+  .topbar,
+  .content-area,
+  .print-toolbar,
+  .print-controls-bar,
+  .modal-backdrop,
+  #toast-container,
+  .no-print {
+    display: none !important;
+  }
+
+  .print-page-wrapper,
+  .report-preview-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    min-height: auto !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  /* Each sheet is printed on an independent physical A4 page */
+  .a4-page-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    width: 210mm !important;
+    height: 296mm !important;
+    min-height: 296mm !important;
+    max-height: 296mm !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+  }
+
+  .a4-page-sheet:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  .letterhead-mode .report-header,
+  .letterhead-mode .report-bottom-disclaimer {
+    display: none !important;
+  }
+
+  .results-table tr {
+    page-break-inside: avoid !important;
+  }
+}

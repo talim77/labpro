@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Patient / Bill - Local Lab Management System</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/print.css">
+</head>
+<body>
+
+  <div id="app-container">
+    
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="sidebar" id="app-sidebar">
+      <div class="sidebar-header">
+        <div class="lab-icon-box">🔬</div>
+        <div class="lab-brand">
+          <h2 id="ui-lab-name">City Lab</h2>
+          <span id="ui-lab-tagline">Pathology Lab</span>
+        </div>
+      </div>
+
+      <ul class="sidebar-menu">
+        <div class="nav-label">MAIN MENU</div>
+        
+        <li>
+          <a class="nav-item" href="index.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            Dashboard
+          </a>
+        </li>
+        
+        <li>
+          <a class="nav-item active" href="new-patient.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+            + New Patient / Bill
+          </a>
+        </li>
+
+        <li>
+          <a class="nav-item" href="patients-reports.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            Patients & Reports
+          </a>
+        </li>
+
+        <li>
+          <a class="nav-item" href="referral-doctors.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+            Referral Doctors (%)
+          </a>
+        </li>
+
+        <li>
+          <a class="nav-item" href="test-catalog.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"></path></svg>
+            Test Catalog & Rates
+          </a>
+        </li>
+
+        <div class="nav-label admin-only">ADMIN CONTROLS</div>
+
+        <li class="admin-only">
+          <a class="nav-item" href="staff.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            Staff Accounts
+          </a>
+        </li>
+
+        <li class="admin-only">
+          <a class="nav-item" href="settings.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            Settings & Backup
+          </a>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="user-badge">
+          <div style="flex:1; overflow:hidden;">
+            <div id="ui-user-name" style="font-weight:700; font-size:13px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">User</div>
+            <span id="ui-user-role" class="role-pill staff">STAFF</span>
+          </div>
+          <button class="btn btn-outline btn-sm" style="color:#cbd5e1; border-color:#334155; padding:4px 8px;" onclick="window.app.logout()" title="Logout">
+            Logout
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN APP WRAPPER -->
+    <div class="main-wrapper">
+      
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 class="page-title">New Patient Registration & Billing</h1>
+        </div>
+        <div class="topbar-right">
+          <a class="btn btn-outline btn-sm" href="patients-reports.html">
+            📋 View All Patients
+          </a>
+        </div>
+      </header>
+
+      <!-- CONTENT AREA -->
+      <main class="content-area">
+        <div class="grid-cols-2" style="align-items:flex-start;">
+          
+          <!-- Left Column: Patient Demographics -->
+          <div class="card">
+            <h3 style="font-size:16px; font-weight:700; margin-bottom:16px; color:#0284c7;">1. Patient Demographics</h3>
+            
+            <div class="form-group">
+              <label class="form-label required">Patient Full Name</label>
+              <input type="text" id="patient-name" class="form-control" placeholder="e.g. Ramesh Kumar">
+            </div>
+
+            <div style="display:grid; grid-template-columns: 2fr 1fr 2fr; gap:12px;">
+              <div class="form-group">
+                <label class="form-label required">Age</label>
+                <input type="number" id="patient-age" class="form-control" placeholder="35">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Unit</label>
+                <select id="patient-age-unit" class="form-control">
+                  <option value="Years">Years</option>
+                  <option value="Months">Months</option>
+                  <option value="Days">Days</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label required">Gender</label>
+                <select id="patient-gender" class="form-control">
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Contact / Mobile Number</label>
+              <input type="tel" id="patient-phone" class="form-control" placeholder="e.g. 9876543210">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Patient Address (Optional)</label>
+              <input type="text" id="patient-address" class="form-control" placeholder="e.g. Ward 4, Civil Lines">
+            </div>
+
+            <!-- Referring Doctor with Quick Add Button -->
+            <div class="form-group">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <label class="form-label required" style="margin-bottom:0;">Referring Doctor</label>
+                <button type="button" class="btn btn-outline btn-sm" onclick="window.app.openQuickDoctorModal()" style="font-size:12px; padding:3px 10px; color:#0284c7; border-color:#38bdf8;">
+                  ➕ Add New Doctor
+                </button>
+              </div>
+              <select id="patient-doctor-select" class="form-control">
+                <!-- Populated dynamically -->
+              </select>
+              <small style="color:#64748b; font-size:11px; margin-top:4px; display:block;">
+                * Doctor select karne par unka referral commission auto-track hoga. Agar doctor list me nahi hai toh upar <strong>"+ Add New Doctor"</strong> dabayein.
+              </small>
+            </div>
+          </div>
+
+          <!-- Right Column: Test Selection & Billing -->
+          <div class="card">
+            <h3 style="font-size:16px; font-weight:700; margin-bottom:16px; color:#0284c7;">2. Select Tests & Billing</h3>
+
+            <div class="form-group">
+              <label class="form-label required">Select Blood / Pathology Tests</label>
+              <div id="billing-test-checkboxes" style="max-height:220px; overflow-y:auto; border:1px solid #e2e8f0; padding:10px; border-radius:6px; background:#f8fafc;">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+            <!-- Billing Calculation Box -->
+            <div style="background:#f1f5f9; border-radius:6px; padding:16px; margin-top:16px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px;">
+                <span>Subtotal Amount:</span>
+                <strong id="bill-summary-subtotal">₹0.00</strong>
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <label class="form-label" style="margin-bottom:0;">Special Discount (₹):</label>
+                <input type="number" id="patient-discount" class="form-control" style="width:120px; text-align:right;" value="0" oninput="window.app.recalculateBillingTotals()">
+              </div>
+
+              <!-- Discount Approval Alert Box -->
+              <div id="discount-approval-box" class="discount-alert-box" style="display:none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <p id="discount-approval-status-text">
+                  Discount requires Admin Approval.
+                </p>
+              </div>
+
+              <div style="display:flex; justify-content:space-between; margin-top:12px; padding-top:8px; border-top:1.5px solid #cbd5e1; font-size:16px; font-weight:800; color:#0f172a;">
+                <span>Final Payable Total:</span>
+                <span id="bill-summary-final" style="color:#0284c7;">₹0.00</span>
+              </div>
+
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:12px;">
+                <div>
+                  <label class="form-label required">Paid Amount (₹)</label>
+                  <input type="number" id="patient-paid" class="form-control" value="0" oninput="this.dataset.autoFilled='false'; window.app.recalculateBillingTotals();">
+                </div>
+                <div>
+                  <label class="form-label required">Payment Mode</label>
+                  <select id="patient-payment-mode" class="form-control">
+                    <option value="Cash">Cash</option>
+                    <option value="UPI / QR">UPI / QR Code</option>
+                    <option value="Card">Debit/Credit Card</option>
+                    <option value="Net Banking">Net Banking</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Live Balance Due preview -->
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding:6px 10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; font-size:13px;">
+                <span style="font-weight:600; color:#475569;">Balance Due / Outstanding:</span>
+                <span id="bill-summary-due" style="font-weight:700; color:#16a34a;">₹0.00 (Fully Paid)</span>
+              </div>
+            </div>
+
+            <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+              <button class="btn btn-success" style="padding:12px 24px; font-size:15px;" onclick="window.app.submitNewPatient()">
+                ✓ Save & Register Patient
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+      </main>
+
+    </div>
+
+  </div>
+
+  <!-- QUICK ADD DOCTOR MODAL (Right inside New Patient page!) -->
+  <div class="modal-backdrop" id="modal-quick-add-doctor">
+    <div class="modal-dialog" style="max-width:480px;">
+      <div class="modal-header">
+        <h3>+ Add New Referring Doctor</h3>
+        <button class="modal-close" onclick="window.app.closeModal('modal-quick-add-doctor')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="form-quick-doctor" onsubmit="event.preventDefault(); window.app.saveQuickDoctor();">
+          <div class="form-group">
+            <label class="form-label required">Doctor Full Name</label>
+            <input type="text" id="quick-doc-name-input" class="form-control" placeholder="e.g. Dr. Rajesh Verma">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Degree / Specialization</label>
+            <input type="text" id="quick-doc-degree-input" class="form-control" placeholder="e.g. MBBS, MD">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Clinic / Hospital Name</label>
+            <input type="text" id="quick-doc-hospital-input" class="form-control" placeholder="e.g. Verma Clinic">
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div class="form-group">
+              <label class="form-label">Phone Number</label>
+              <input type="tel" id="quick-doc-phone-input" class="form-control" placeholder="e.g. 9812345678">
+            </div>
+            <div class="form-group">
+              <label class="form-label required">Commission Rate (%)</label>
+              <input type="number" id="quick-doc-rate-input" class="form-control" placeholder="e.g. 15" value="15">
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="window.app.closeModal('modal-quick-add-doctor')">Cancel</button>
+        <button class="btn btn-primary" onclick="window.app.saveQuickDoctor()">Save & Select Doctor</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VERIFY ADMIN PIN FOR DISCOUNT MODAL -->
+  <div class="modal-backdrop" id="modal-verify-admin-pin">
+    <div class="modal-dialog" style="max-width:400px;">
+      <div class="modal-header">
+        <h3>Admin Approval Required</h3>
+        <button class="modal-close" onclick="window.app.closeModal('modal-verify-admin-pin')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:12px; color:#64748b; margin-bottom:14px;">
+          Staff ko discount dene ke liye Admin ka PIN verify karna anivarya hai.
+        </p>
+        <div class="form-group">
+          <label class="form-label required">Admin Security PIN</label>
+          <input type="password" id="input-verify-admin-pin" class="form-control" placeholder="Enter Admin PIN">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" onclick="window.app.closeModal('modal-verify-admin-pin')">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="window.app.verifyAdminPinForDiscount()">Approve Discount</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <!-- SCRIPTS -->
+  <script src="assets/js/db.js?v=2.3"></script>
+  <script src="assets/js/tests-catalog.js?v=2.3"></script>
+  <script src="assets/js/auth.js?v=2.3"></script>
+  <script src="assets/js/doctors.js?v=2.3"></script>
+  <script src="assets/js/patient-billing.js?v=2.3"></script>
+  <script src="assets/js/report-entry.js?v=2.3"></script>
+  <script src="assets/js/report-print.js?v=2.3"></script>
+  <script src="assets/js/backup.js?v=2.3"></script>
+  <script src="assets/js/app.js?v=2.3"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      window.app.init('new-patient');
+    });
+  </script>
+
+</body>
+</html>

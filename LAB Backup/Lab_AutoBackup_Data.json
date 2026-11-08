@@ -1,0 +1,1597 @@
+{
+  "version": 1,
+  "exportedAt": "2026-11-06T07:04:30.912Z",
+  "stores": {
+    "lab_profiles": [
+      {
+        "id": "lab_5quu883vl",
+        "name": "asmin",
+        "tagline": "Clinical Pathology & Diagnostic Centre",
+        "address": "basdila mainuddin",
+        "phone": "1234567890",
+        "email": "",
+        "regNo": "",
+        "technologistName": "Lab Technician (DMLT)",
+        "pathologistName": "Consultant Pathologist (MD)",
+        "letterheadTopMargin": 50,
+        "logoBase64": "",
+        "createdAt": "2026-11-03T07:00:09.370Z"
+      }
+    ],
+    "users": [
+      {
+        "id": "usr_42n363ru7",
+        "labId": "lab_5quu883vl",
+        "name": "Admin (asmin)",
+        "username": "admin",
+        "pin": "0000",
+        "role": "admin",
+        "active": true,
+        "createdAt": "2026-11-03T07:00:09.379Z"
+      },
+      {
+        "id": "usr_zh4pfi5w5",
+        "labId": "lab_5quu883vl",
+        "name": "Talim",
+        "username": "talimz77",
+        "pin": "4212",
+        "phone": "",
+        "role": "staff",
+        "active": true,
+        "createdAt": "2026-11-04T12:22:22.536Z"
+      },
+      {
+        "id": "usr_zj37xbew1",
+        "labId": "lab_5quu883vl",
+        "name": "Sakib",
+        "username": "sk",
+        "pin": "0000",
+        "phone": "",
+        "role": "staff",
+        "active": true,
+        "createdAt": "2026-11-06T07:02:58.365Z"
+      }
+    ],
+    "doctors": [
+      {
+        "id": "doc_7bkhq64ia",
+        "labId": "lab_5quu883vl",
+        "name": "Dr.Mazid",
+        "degree": "PHD",
+        "hospital": "Life Care hospital",
+        "phone": "1234598765",
+        "commissionRate": 50
+      },
+      {
+        "id": "doc_hiksrmlm5",
+        "labId": "lab_5quu883vl",
+        "name": "Talim",
+        "degree": "backup test",
+        "hospital": "MSI",
+        "phone": "1234567890",
+        "commissionRate": 99,
+        "createdAt": "2026-11-06T07:01:14.328Z"
+      },
+      {
+        "id": "doc_n21n9fy6h",
+        "labId": "lab_5quu883vl",
+        "name": "Jamal",
+        "degree": "Lover of Rozi",
+        "hospital": "Ansari sonar dukan",
+        "phone": "123453456",
+        "commissionRate": 80,
+        "createdAt": "2026-11-03T10:19:37.669Z"
+      }
+    ],
+    "test_catalog": [
+      {
+        "id": "test_0chtlkpo9",
+        "labId": "lab_5quu883vl",
+        "code": "THY01",
+        "name": "Thyroid Profile (Total T3, T4, TSH)",
+        "category": "Serology / Endocrinology",
+        "price": 450,
+        "parameters": [
+          {
+            "name": "Total Triiodothyronine (T3)",
+            "unit": "ng/mL",
+            "min": 0.8,
+            "max": 2,
+            "rangeStr": "0.8 - 2.0 ng/mL"
+          },
+          {
+            "name": "Total Thyroxine (T4)",
+            "unit": "ug/dL",
+            "min": 5.1,
+            "max": 14.1,
+            "rangeStr": "5.1 - 14.1 ug/dL"
+          },
+          {
+            "name": "TSH (Ultrasensitive)",
+            "unit": "uIU/mL",
+            "min": 0.4,
+            "max": 4.5,
+            "rangeStr": "0.40 - 4.50 uIU/mL"
+          }
+        ],
+        "createdAt": "2026-11-03T07:00:09.404Z"
+      },
+      {
+        "id": "test_7f0x8h4w0",
+        "labId": "lab_5quu883vl",
+        "code": "LIP01",
+        "name": "Lipid Profile",
+        "category": "Biochemistry",
+        "price": 600,
+        "parameters": [
+          {
+            "name": "Serum Cholesterol (Total)",
+            "unit": "mg/dL",
+            "min": 125,
+            "max": 200,
+            "rangeStr": "< 200 mg/dL Desirable"
+          },
+          {
+            "name": "Serum Triglycerides",
+            "unit": "mg/dL",
+            "min": 50,
+            "max": 150,
+            "rangeStr": "< 150 mg/dL Normal"
+          },
+          {
+            "name": "HDL Cholesterol",
+            "unit": "mg/dL",
+            "maleMin": 40,
+            "maleMax": 60,
+            "femaleMin": 50,
+            "femaleMax": 70,
+            "rangeStr": "> 40 mg/dL (Male) | > 50 mg/dL (Female)"
+          },
+          {
+            "name": "LDL Cholesterol",
+            "unit": "mg/dL",
+            "min": 0,
+            "max": 100,
+            "rangeStr": "< 100 mg/dL Optimal"
+          },
+          {
+            "name": "VLDL Cholesterol",
+            "unit": "mg/dL",
+            "min": 5,
+            "max": 30,
+            "rangeStr": "5 - 30 mg/dL"
+          },
+          {
+            "name": "Total / HDL Ratio",
+            "unit": "",
+            "min": 3,
+            "max": 5,
+            "rangeStr": "3.0 - 5.0"
+          }
+        ],
+        "createdAt": "2026-11-03T07:00:09.393Z"
+      },
+      {
+        "id": "test_bqhht6akc",
+        "labId": "lab_5quu883vl",
+        "code": "GLU02",
+        "name": "Blood Glucose (Post Prandial - PPBS)",
+        "category": "Biochemistry",
+        "price": 80,
+        "parameters": [
+          {
+            "name": "Blood Glucose PP",
+            "unit": "mg/dL",
+            "min": 70,
+            "max": 140,
+            "rangeStr": "Up to 140 mg/dL"
+          }
+        ],
+        "createdAt": "2026-11-03T07:00:09.382Z"
+      },
+      {
+        "id": "test_ojc42gxdt",
+        "labId": "lab_5quu883vl",
+        "code": "HBA1C",
+        "name": "HbA1c (Glycated Hemoglobin)",
+        "category": "Biochemistry",
+        "price": 450,
+        "parameters": [
+          {
+            "name": "HbA1c",
+            "unit": "%",
+            "min": 4,
+            "max": 5.6,
+            "rangeStr": "< 5.7 % (Normal)\n5.7 - 6.4 % (Prediabetes)\n>= 6.5 % (Diabetic)"
+          },
+          {
+            "name": "Estimated Average Glucose (eAG)",
+            "unit": "mg/dL",
+            "min": 70,
+            "max": 126,
+            "rangeStr": "70 - 126 mg/dL"
+          }
+        ],
+        "createdAt": "2026-11-03T07:00:09.389Z"
+      },
+      {
+        "id": "test_ovtl7e0jn",
+        "labId": "lab_5quu883vl",
+        "code": "CBC01",
+        "name": "Complete Blood Count (CBC / Hemogram)",
+        "category": "Hematology",
+        "price": 350,
+        "parameters": [
+          {
+            "name": "Hemoglobin (Hb)",
+            "unit": "g/dL",
+            "maleMin": 13,
+            "maleMax": 17,
+            "femaleMin": 12,
+            "femaleMax": 15,
+            "rangeStr": "Male: 13.0-17.0 | Female: 12.0-15.0 g/dL"
+          },
+          {
+            "name": "Total Leukocyte Count (TLC)",
+            "unit": "/cumm",
+            "min": 4000,
+            "max": 11000,
+            "rangeStr": "4,000 - 11,000 /cumm"
+          },
+          {
+            "name": "Neutrophils",
+            "unit": "%",
+            "min": 40,
+            "max": 75,
+            "rangeStr": "40 - 75 %"
+          },
+          {
+            "name": "Lymphocytes",
+            "unit": "%",
+            "min": 20,
+            "max": 45,
+            "rangeStr": "20 - 45 %"
+          },
+          {
+            "name": "Eosinophils",
+            "unit": "%",
+            "min": 1,
+            "max": 6,
+            "rangeStr": "01 - 06 %"
+          },
+          {
+            "name": "Monocytes",
+            "unit": "%",
+            "min": 2,
+            "max": 10,
+            "rangeStr": "02 - 10 %"
+          },
+          {
+            "name": "Basophils",
+            "unit": "%",
+            "min": 0,
+            "max": 1,
+            "rangeStr": "00 - 01 %"
+          },
+          {
+            "name": "Platelet Count",
+            "unit": "Lakh/cumm",
+            "min": 1.5,
+            "max": 4.5,
+            "rangeStr": "1.5 - 4.5 Lakhs /cumm"
+          },
+          {
+            "name": "Total RBC Count",
+            "unit": "mill/cumm",
+            "maleMin": 4.5,
+            "maleMax": 5.5,
+            "femaleMin": 3.8,
+            "femaleMax": 4.8,
+            "rangeStr": "Male: 4.5-5.5 | Female: 3.8-4.8 mill/cumm"
+          },
+          {
+            "name": "Packed Cell Volume (PCV)",
+            "unit": "%",
+            "maleMin": 40,
+            "maleMax": 50,
+            "femaleMin": 36,
+            "femaleMax": 46,
+            "rangeStr": "Male: 40-50 | Female: 36-46 %"
+          },
+          {
+            "name": "MCV",
+            "unit": "fL",
+            "min": 80,
+            "max": 100,
+            "rangeStr": "80 - 100 fL"
+          },
+          {
+            "name": "MCH",
+            "unit": "pg",
+            "min": 27,
+            "max": 32,
+            "rangeStr": "27 - 32 pg"
+          },
+          {
+            "name": "MCHC",
+            "unit": "g/dL",
+            "min": 32,
+            "max": 36,
+            "rangeStr": "32 - 36 g/dL"
+          }
+        ],
+        "createdAt": "2026-11-03T07:00:09.381Z"
+      },
+      {
+        "id": "test_q14du5fxn",
+        "labId": "lab_5quu883vl",
+        "code": "URI01",
+        "name": "Urine Routine & Microscopic Examination",
+        "category": "Clinical Pathology",
+        "price": 150,
+        "parameters": [
+          {
+            "name": "Color",
+            "unit": "",
+            "rangeStr": "Pale Yellow"
+          },
+          {
+            "name": "Appearance / Transparency",
+            "unit": "",
+            "rangeStr": "Clear"
+          },
+          {
+            "name": "Reaction / pH",
+            "unit": "",
+            "rangeStr": "5.0 - 7.5 (Acidic to Neutral)"
+          },
+          {
+            "name": "Specific Gravity",
+            "unit": "",
+            "rangeStr": "1.010 - 1.025"
+          },
+          {
+            "name": "Chemical - Albumin / Protein",
+            "unit": "",
+            "rangeStr": "Nil / Negative"
+          },
+          {
+            "name": "Chemical - Sugar",
+            "unit": "",
+            "rangeStr": "Nil / Negative"
+          },
+          {
+            "name": "Microscopic - Pus Cells",
+            "unit": "/HPF",
+            "rangeStr": "0 - 5 / HPF"
+          },
+          {
+            "name": "Microscopic - RBCs",
+            "unit": "/HPF",
+            "rangeStr": "Nil / 0-2 / HPF"
+          },
+          {
+            "name": "Microscopic - Epithelial Cells",
+            "unit": "/HPF",
+            "rangeStr": "Few (1-3) / HPF"
+          },
+          {
+            "name": "Microscopic - Casts / Crystals",
+            "unit": "",
+            "rangeStr": "Not Seen"
+          }
+        ],
+        "createdAt": "2026-11-03T07:00:09.407Z"
+      },
+      {
+        "id": "test_r6mvkfp2c",
+        "labId": "lab_5quu883vl",
+        "code": "GLU03",
+        "name": "Blood Glucose (Random - RBS)",
+        "category": "Biochemistry",
+        "price": 80,
+        "parameters": [
+          {
+            "name": "Blood Glucose Random",
+            "unit": "mg/dL",
+            "min": 70,
+            "max": 140,
+            "rangeStr": "70 - 140 mg/dL"
+          }
+        ],
+        "createdAt": "2026-11-03T07:00:09.386Z"
+      },
+      {
+        "id": "test_r9hoxqkmo",
+        "labId": "lab_5quu883vl",
+        "code": "LFT01",
+        "name": "Liver Function Test (LFT)",
+        "category": "Biochemistry",
+        "price": 650,
+        "parameters": [
+          {
+            "name": "Bilirubin Total",
+            "unit": "mg/dL",
+            "min": 0.2,
+            "max": 1.2,
+            "rangeStr": "0.2 - 1.2 mg/dL"
+          },
+          {
+            "name": "Bilirubin Direct (Conjugated)",
+            "unit": "mg/dL",
+            "min": 0,
+            "max": 0.3,
+            "rangeStr": "0.0 - 0.3 mg/dL"
+          },
+          {
+            "name": "Bilirubin Indirect (Unconjugated)",
+            "unit": "mg/dL",
+            "min": 0.2,
+            "max": 0.9,
+            "rangeStr": "0.2 - 0.9 mg/dL"
+          },
+          {
+            "name": "SGOT / AST",
+            "unit": "U/L",
+            "min": 5,
+            "max": 40,
+            "rangeStr": "5 - 40 U/L"
+          },
+          {
+            "name": "SGPT / ALT",
+            "unit": "U/L",
+            "min": 5,
+            "max": 45,
+            "rangeStr": "5 - 45 U/L"
+          },
+          {
+            "name": "Alkaline Phosphatase (ALP)",
+            "unit": "U/L",
+            "min": 30,
+            "max": 120,
+            "rangeStr": "30 - 120 U/L"
+          },
+          {
+            "name": "Total Protein",
+            "unit": "g/dL",
+            "min": 6,
+            "max": 8.3,
+            "rangeStr": "6.0 - 8.3 g/dL"
+          },
+          {
+            "name": "Serum Albumin",
+            "unit": "g/dL",
+            "min": 3.5,
+            "max": 5,
+            "rangeStr": "3.5 - 5.0 g/dL"
+          },
+          {
+            "name": "Serum Globulin",
+            "unit": "g/dL",
+            "min": 2,
+            "max": 3.5,
+            "rangeStr": "2.0 - 3.5 g/dL"
+          },
+          {
+            "name": "A/G Ratio",
+            "unit": "",
+            "min": 1.2,
+            "max": 2.2,
+            "rangeStr": "1.2 - 2.2"
+          }
+        ],
+        "createdAt": "2026-11-03T07:00:09.397Z"
+      },
+      {
+        "id": "test_srsgfgbm1",
+        "labId": "lab_5quu883vl",
+        "code": "DEN01",
+        "name": "Dengue Serology (NS1 + IgM + IgG)",
+        "category": "Serology",
+        "price": 800,
+        "parameters": [
+          {
+            "name": "Dengue NS1 Antigen",
+            "unit": "",
+            "rangeStr": "Negative"
+          },
+          {
+            "name": "Dengue IgM Antibody",
+            "unit": "",
+            "rangeStr": "Negative"
+          },
+          {
+            "name": "Dengue IgG Antibody",
+            "unit": "",
+            "rangeStr": "Negative"
+          }
+        ],
+        "createdAt": "2026-11-03T07:00:09.407Z"
+      },
+      {
+        "id": "test_wnvr0ckkt",
+        "labId": "lab_5quu883vl",
+        "code": "WID01",
+        "name": "Widal Slide Agglutination (Typhoid)",
+        "category": "Serology",
+        "price": 200,
+        "parameters": [
+          {
+            "name": "S. Typhi \"O\" (Somat)",
+            "unit": "Titre",
+            "rangeStr": "Negative (< 1:80)"
+          },
+          {
+            "name": "S. Typhi \"H\" (Flagell)",
+            "unit": "Titre",
+            "rangeStr": "Negative (< 1:80)"
+          },
+          {
+            "name": "S. Paratyphi \"AH\"",
+            "unit": "Titre",
+            "rangeStr": "Negative (< 1:80)"
+          },
+          {
+            "name": "S. Paratyphi \"BH\"",
+            "unit": "Titre",
+            "rangeStr": "Negative (< 1:80)"
+          },
+          {
+            "name": "Impression",
+            "unit": "",
+            "rangeStr": "No significant titre"
+          }
+        ],
+        "createdAt": "2026-11-03T07:00:09.405Z"
+      },
+      {
+        "id": "test_y7n45r866",
+        "labId": "lab_5quu883vl",
+        "code": "KFT01",
+        "name": "Kidney Function Test (KFT / RFT)",
+        "category": "Biochemistry",
+        "price": 550,
+        "parameters": [
+          {
+            "name": "Blood Urea",
+            "unit": "mg/dL",
+            "min": 15,
+            "max": 40,
+            "rangeStr": "15 - 40 mg/dL"
+          },
+          {
+            "name": "Serum Creatinine",
+            "unit": "mg/dL",
+            "maleMin": 0.7,
+            "maleMax": 1.3,
+            "femaleMin": 0.6,
+            "femaleMax": 1.1,
+            "rangeStr": "Male: 0.7-1.3 | Female: 0.6-1.1 mg/dL"
+          },
+          {
+            "name": "Serum Uric Acid",
+            "unit": "mg/dL",
+            "maleMin": 3.5,
+            "maleMax": 7.2,
+            "femaleMin": 2.6,
+            "femaleMax": 6,
+            "rangeStr": "Male: 3.5-7.2 | Female: 2.6-6.0 mg/dL"
+          },
+          {
+            "name": "Blood Urea Nitrogen (BUN)",
+            "unit": "mg/dL",
+            "min": 7,
+            "max": 20,
+            "rangeStr": "7 - 20 mg/dL"
+          }
+        ],
+        "createdAt": "2026-11-03T07:00:09.401Z"
+      },
+      {
+        "id": "test_zij855ys8",
+        "labId": "lab_5quu883vl",
+        "code": "GLU01",
+        "name": "Blood Glucose (Fasting - FBS)",
+        "category": "Biochemistry",
+        "price": 80,
+        "parameters": [
+          {
+            "name": "Blood Glucose Fasting",
+            "unit": "mg/dL",
+            "min": 70,
+            "max": 100,
+            "rangeStr": "70 - 100 mg/dL (Normal)\n100 - 125 mg/dL (Impaired)"
+          }
+        ],
+        "createdAt": "2026-11-03T07:00:09.382Z"
+      }
+    ],
+    "patients": [
+      {
+        "id": "pat_0gb9g9019",
+        "labId": "lab_5quu883vl",
+        "uhid": "PT-2026-0004",
+        "billNo": "BL-2026-0004",
+        "name": "kamal",
+        "age": "22",
+        "ageUnit": "Years",
+        "gender": "male",
+        "phone": "",
+        "address": "Basdila",
+        "doctorId": "doc_7bkhq64ia",
+        "doctorName": "Dr.Mazid",
+        "doctorCommissionRate": 50,
+        "testIds": [
+          "test_7f0x8h4w0"
+        ],
+        "testNames": [
+          "Lipid Profile"
+        ],
+        "subtotal": 600,
+        "discountAmount": 0,
+        "discountApproved": false,
+        "discountApprovedBy": null,
+        "finalAmount": 600,
+        "paidAmount": 400,
+        "paymentMode": "Cash",
+        "status": "pending",
+        "createdBy": "Admin (asmin)",
+        "createdRole": "admin",
+        "date": "2026-11-03T10:21:20.778Z"
+      },
+      {
+        "id": "pat_2u6sl30b5",
+        "labId": "lab_5quu883vl",
+        "uhid": "PT-2026-0002",
+        "billNo": "BL-2026-0002",
+        "name": "Jamal",
+        "age": "16",
+        "ageUnit": "Years",
+        "gender": "male",
+        "phone": "1234567888",
+        "address": "Basdila",
+        "doctorId": "doc_7bkhq64ia",
+        "doctorName": "Dr.Mazid",
+        "doctorCommissionRate": 50,
+        "testIds": [
+          "test_7f0x8h4w0",
+          "test_wnvr0ckkt",
+          "test_zij855ys8"
+        ],
+        "testNames": [
+          "Lipid Profile",
+          "Widal Slide Agglutination (Typhoid)",
+          "Blood Glucose (Fasting - FBS)"
+        ],
+        "subtotal": 880,
+        "discountAmount": 30,
+        "discountApproved": true,
+        "discountApprovedBy": "Admin (asmin) (Admin)",
+        "finalAmount": 850,
+        "paidAmount": 0,
+        "paymentMode": "Cash",
+        "status": "pending",
+        "createdBy": "Admin (asmin)",
+        "createdRole": "admin",
+        "date": "2026-11-03T10:02:04.454Z"
+      },
+      {
+        "id": "pat_4ycoglqte",
+        "labId": "lab_5quu883vl",
+        "uhid": "PT-2026-0003",
+        "billNo": "BL-2026-0003",
+        "name": "Rozi",
+        "age": "18",
+        "ageUnit": "Years",
+        "gender": "male",
+        "phone": "123452345",
+        "address": "narayan pur sonare k dukan",
+        "doctorId": "doc_n21n9fy6h",
+        "doctorName": "Jamal",
+        "doctorCommissionRate": 80,
+        "testIds": [
+          "test_0chtlkpo9",
+          "test_bqhht6akc",
+          "test_r9hoxqkmo"
+        ],
+        "testNames": [
+          "Thyroid Profile (Total T3, T4, TSH)",
+          "Blood Glucose (Post Prandial - PPBS)",
+          "Liver Function Test (LFT)"
+        ],
+        "subtotal": 1180,
+        "discountAmount": 80,
+        "discountApproved": true,
+        "discountApprovedBy": "Admin (asmin) (Admin)",
+        "finalAmount": 1100,
+        "paidAmount": 1000,
+        "paymentMode": "Cash",
+        "status": "pending",
+        "createdBy": "Admin (asmin)",
+        "createdRole": "admin",
+        "date": "2026-11-03T10:20:11.644Z"
+      },
+      {
+        "id": "pat_e4fnsiyzd",
+        "labId": "lab_5quu883vl",
+        "uhid": "PT-2026-0006",
+        "billNo": "BL-2026-0006",
+        "name": "aftab",
+        "age": "18",
+        "ageUnit": "Years",
+        "gender": "male",
+        "phone": "4567",
+        "address": "deoria",
+        "doctorId": "doc_7bkhq64ia",
+        "doctorName": "Dr.Mazid",
+        "doctorCommissionRate": 50,
+        "testIds": [
+          "test_0chtlkpo9",
+          "test_7f0x8h4w0",
+          "test_bqhht6akc",
+          "test_ojc42gxdt",
+          "test_ovtl7e0jn",
+          "test_q14du5fxn",
+          "test_r6mvkfp2c"
+        ],
+        "testNames": [
+          "Thyroid Profile (Total T3, T4, TSH)",
+          "Lipid Profile",
+          "Blood Glucose (Post Prandial - PPBS)",
+          "HbA1c (Glycated Hemoglobin)",
+          "Complete Blood Count (CBC / Hemogram)",
+          "Urine Routine & Microscopic Examination",
+          "Blood Glucose (Random - RBS)"
+        ],
+        "subtotal": 2160,
+        "discountAmount": 160,
+        "discountApproved": true,
+        "discountApprovedBy": "Admin (asmin) (Admin)",
+        "finalAmount": 2000,
+        "paidAmount": 1000,
+        "paymentMode": "Cash",
+        "status": "pending",
+        "createdBy": "Admin (asmin)",
+        "createdRole": "admin",
+        "date": "2026-11-03T11:42:27.058Z"
+      },
+      {
+        "id": "pat_mj718c8id",
+        "labId": "lab_5quu883vl",
+        "uhid": "PT-2026-0005",
+        "billNo": "BL-2026-0005",
+        "name": "sakib",
+        "age": "24",
+        "ageUnit": "Years",
+        "gender": "male",
+        "phone": "124",
+        "address": "Malsi",
+        "doctorId": "doc_n21n9fy6h",
+        "doctorName": "Jamal",
+        "doctorCommissionRate": 80,
+        "testIds": [
+          "test_0chtlkpo9",
+          "test_bqhht6akc"
+        ],
+        "testNames": [
+          "Thyroid Profile (Total T3, T4, TSH)",
+          "Blood Glucose (Post Prandial - PPBS)"
+        ],
+        "subtotal": 530,
+        "discountAmount": 30,
+        "discountApproved": true,
+        "discountApprovedBy": "Admin (asmin) (Admin)",
+        "finalAmount": 500,
+        "paidAmount": 200,
+        "paymentMode": "Cash",
+        "status": "completed",
+        "createdBy": "Admin (asmin)",
+        "createdRole": "admin",
+        "date": "2026-11-03T11:39:01.238Z"
+      },
+      {
+        "id": "pat_npi6o81ow",
+        "labId": "lab_5quu883vl",
+        "uhid": "PT-2026-0001",
+        "billNo": "BL-2026-0001",
+        "name": "Talim",
+        "age": "23",
+        "ageUnit": "Years",
+        "gender": "male",
+        "phone": "9161994212",
+        "address": "baghauch ghat",
+        "doctorId": "self",
+        "doctorName": "Self / Walk-in",
+        "doctorCommissionRate": 0,
+        "testIds": [
+          "test_y7n45r866",
+          "test_zij855ys8"
+        ],
+        "testNames": [
+          "Kidney Function Test (KFT / RFT)",
+          "Blood Glucose (Fasting - FBS)"
+        ],
+        "subtotal": 630,
+        "discountAmount": 0,
+        "discountApproved": false,
+        "discountApprovedBy": null,
+        "finalAmount": 630,
+        "paidAmount": 630,
+        "paymentMode": "Cash",
+        "status": "completed",
+        "createdBy": "Admin (asmin)",
+        "createdRole": "admin",
+        "date": "2026-11-03T07:08:11.842Z"
+      }
+    ],
+    "reports": [
+      {
+        "id": "rep_17rfnyada",
+        "labId": "lab_5quu883vl",
+        "patientId": "pat_0gb9g9019",
+        "billNo": "BL-2026-0004",
+        "testId": "test_7f0x8h4w0",
+        "testName": "Lipid Profile",
+        "category": "Biochemistry",
+        "parametersData": {
+          "Serum Cholesterol (Total)": {
+            "value": "",
+            "unit": "mg/dL",
+            "range": "< 200 mg/dL Desirable",
+            "flag": "normal"
+          },
+          "Serum Triglycerides": {
+            "value": "",
+            "unit": "mg/dL",
+            "range": "< 150 mg/dL Normal",
+            "flag": "normal"
+          },
+          "HDL Cholesterol": {
+            "value": "",
+            "unit": "mg/dL",
+            "range": "> 40 mg/dL (Male) | > 50 mg/dL (Female)",
+            "flag": "normal"
+          },
+          "LDL Cholesterol": {
+            "value": "",
+            "unit": "mg/dL",
+            "range": "< 100 mg/dL Optimal",
+            "flag": "normal"
+          },
+          "VLDL Cholesterol": {
+            "value": "",
+            "unit": "mg/dL",
+            "range": "5 - 30 mg/dL",
+            "flag": "normal"
+          },
+          "Total / HDL Ratio": {
+            "value": "",
+            "unit": "",
+            "range": "3.0 - 5.0",
+            "flag": "normal"
+          }
+        },
+        "remarks": "",
+        "status": "pending",
+        "technologist": "",
+        "pathologist": "",
+        "date": "2026-11-03T10:21:20.778Z"
+      },
+      {
+        "id": "rep_200je97sm",
+        "labId": "lab_5quu883vl",
+        "patientId": "pat_npi6o81ow",
+        "billNo": "BL-2026-0001",
+        "testId": "test_zij855ys8",
+        "testName": "Blood Glucose (Fasting - FBS)",
+        "category": "Biochemistry",
+        "parametersData": {
+          "Blood Glucose Fasting": {
+            "value": "132",
+            "unit": "mg/dL",
+            "range": "70 - 100 mg/dL (Normal)\n100 - 125 mg/dL (Impaired)",
+            "flag": "high"
+          }
+        },
+        "remarks": "",
+        "status": "completed",
+        "technologist": "Lab Technician (DMLT)",
+        "pathologist": "Consultant Pathologist (MD)",
+        "date": "2026-11-03T07:08:11.842Z",
+        "reportedDate": "2026-11-04T12:20:56.277Z"
+      },
+      {
+        "id": "rep_2ge5odess",
+        "labId": "lab_5quu883vl",
+        "patientId": "pat_npi6o81ow",
+        "billNo": "BL-2026-0001",
+        "testId": "test_y7n45r866",
+        "testName": "Kidney Function Test (KFT / RFT)",
+        "category": "Biochemistry",
+        "parametersData": {
+          "Blood Urea": {
+            "value": "44",
+            "unit": "mg/dL",
+            "range": "15 - 40 mg/dL",
+            "flag": "high"
+          },
+          "Serum Creatinine": {
+            "value": "1.1",
+            "unit": "mg/dL",
+            "range": "Male: 0.7-1.3 | Female: 0.6-1.1 mg/dL",
+            "flag": "normal"
+          },
+          "Serum Uric Acid": {
+            "value": "4.2",
+            "unit": "mg/dL",
+            "range": "Male: 3.5-7.2 | Female: 2.6-6.0 mg/dL",
+            "flag": "normal"
+          },
+          "Blood Urea Nitrogen (BUN)": {
+            "value": "12",
+            "unit": "mg/dL",
+            "range": "7 - 20 mg/dL",
+            "flag": "normal"
+          }
+        },
+        "remarks": "",
+        "status": "completed",
+        "technologist": "Lab Technician (DMLT)",
+        "pathologist": "Consultant Pathologist (MD)",
+        "date": "2026-11-03T07:08:11.842Z",
+        "reportedDate": "2026-11-04T12:20:56.283Z"
+      },
+      {
+        "id": "rep_2wk6aoqd1",
+        "labId": "lab_5quu883vl",
+        "patientId": "pat_e4fnsiyzd",
+        "billNo": "BL-2026-0006",
+        "testId": "test_r6mvkfp2c",
+        "testName": "Blood Glucose (Random - RBS)",
+        "category": "Biochemistry",
+        "parametersData": {
+          "Blood Glucose Random": {
+            "value": "",
+            "unit": "mg/dL",
+            "range": "70 - 140 mg/dL",
+            "flag": "normal"
+          }
+        },
+        "remarks": "",
+        "status": "pending",
+        "technologist": "",
+        "pathologist": "",
+        "date": "2026-11-03T11:42:27.058Z"
+      },
+      {
+        "id": "rep_5s6yjlifi",
+        "labId": "lab_5quu883vl",
+        "patientId": "pat_2u6sl30b5",
+        "billNo": "BL-2026-0002",
+        "testId": "test_zij855ys8",
+        "testName": "Blood Glucose (Fasting - FBS)",
+        "category": "Biochemistry",
+        "parametersData": {
+          "Blood Glucose Fasting": {
+            "value": "60",
+            "unit": "mg/dL",
+            "range": "70 - 100 mg/dL (Normal)\n100 - 125 mg/dL (Impaired)",
+            "flag": "low"
+          }
+        },
+        "remarks": "",
+        "status": "completed",
+        "technologist": "Lab Technician (DMLT)",
+        "pathologist": "Consultant Pathologist (MD)",
+        "date": "2026-11-03T10:02:04.454Z",
+        "reportedDate": "2026-11-06T06:58:41.840Z"
+      },
+      {
+        "id": "rep_6cw7fa9i2",
+        "labId": "lab_5quu883vl",
+        "patientId": "pat_e4fnsiyzd",
+        "billNo": "BL-2026-0006",
+        "testId": "test_ovtl7e0jn",
+        "testName": "Complete Blood Count (CBC / Hemogram)",
+        "category": "Hematology",
+        "parametersData": {
+          "Hemoglobin (Hb)": {
+            "value": "",
+            "unit": "g/dL",
+            "range": "Male: 13.0-17.0 | Female: 12.0-15.0 g/dL",
+            "flag": "normal"
+          },
+          "Total Leukocyte Count (TLC)": {
+            "value": "",
+            "unit": "/cumm",
+            "range": "4,000 - 11,000 /cumm",
+            "flag": "normal"
+          },
+          "Neutrophils": {
+            "value": "",
+            "unit": "%",
+            "range": "40 - 75 %",
+            "flag": "normal"
+          },
+          "Lymphocytes": {
+            "value": "",
+            "unit": "%",
+            "range": "20 - 45 %",
+            "flag": "normal"
+          },
+          "Eosinophils": {
+            "value": "",
+            "unit": "%",
+            "range": "01 - 06 %",
+            "flag": "normal"
+          },
+          "Monocytes": {
+            "value": "",
+            "unit": "%",
+            "range": "02 - 10 %",
+            "flag": "normal"
+          },
+          "Basophils": {
+            "value": "",
+            "unit": "%",
+            "range": "00 - 01 %",
+            "flag": "normal"
+          },
+          "Platelet Count": {
+            "value": "",
+            "unit": "Lakh/cumm",
+            "range": "1.5 - 4.5 Lakhs /cumm",
+            "flag": "normal"
+          },
+          "Total RBC Count": {
+            "value": "",
+            "unit": "mill/cumm",
+            "range": "Male: 4.5-5.5 | Female: 3.8-4.8 mill/cumm",
+            "flag": "normal"
+          },
+          "Packed Cell Volume (PCV)": {
+            "value": "",
+            "unit": "%",
+            "range": "Male: 40-50 | Female: 36-46 %",
+            "flag": "normal"
+          },
+          "MCV": {
+            "value": "",
+            "unit": "fL",
+            "range": "80 - 100 fL",
+            "flag": "normal"
+          },
+          "MCH": {
+            "value": "",
+            "unit": "pg",
+            "range": "27 - 32 pg",
+            "flag": "normal"
+          },
+          "MCHC": {
+            "value": "",
+            "unit": "g/dL",
+            "range": "32 - 36 g/dL",
+            "flag": "normal"
+          }
+        },
+        "remarks": "",
+        "status": "pending",
+        "technologist": "",
+        "pathologist": "",
+        "date": "2026-11-03T11:42:27.058Z"
+      },
+      {
+        "id": "rep_fusdexmrt",
+        "labId": "lab_5quu883vl",
+        "patientId": "pat_e4fnsiyzd",
+        "billNo": "BL-2026-0006",
+        "testId": "test_0chtlkpo9",
+        "testName": "Thyroid Profile (Total T3, T4, TSH)",
+        "category": "Serology / Endocrinology",
+        "parametersData": {
+          "Total Triiodothyronine (T3)": {
+            "value": "",
+            "unit": "ng/mL",
+            "range": "0.8 - 2.0 ng/mL",
+            "flag": "normal"
+          },
+          "Total Thyroxine (T4)": {
+            "value": "",
+            "unit": "ug/dL",
+            "range": "5.1 - 14.1 ug/dL",
+            "flag": "normal"
+          },
+          "TSH (Ultrasensitive)": {
+            "value": "",
+            "unit": "uIU/mL",
+            "range": "0.40 - 4.50 uIU/mL",
+            "flag": "normal"
+          }
+        },
+        "remarks": "",
+        "status": "pending",
+        "technologist": "",
+        "pathologist": "",
+        "date": "2026-11-03T11:42:27.058Z"
+      },
+      {
+        "id": "rep_he0wh0gxr",
+        "labId": "lab_5quu883vl",
+        "patientId": "pat_4ycoglqte",
+        "billNo": "BL-2026-0003",
+        "testId": "test_r9hoxqkmo",
+        "testName": "Liver Function Test (LFT)",
+        "category": "Biochemistry",
+        "parametersData": {
+          "Bilirubin Total": {
+            "value": "",
+            "unit": "mg/dL",
+            "range": "0.2 - 1.2 mg/dL",
+            "flag": "normal"
+          },
+          "Bilirubin Direct (Conjugated)": {
+            "value": "",
+            "unit": "mg/dL",
+            "range": "0.0 - 0.3 mg/dL",
+            "flag": "normal"
+          },
+          "Bilirubin Indirect (Unconjugated)": {
+            "value": "",
+            "unit": "mg/dL",
+            "range": "0.2 - 0.9 mg/dL",
+            "flag": "normal"
+          },
+          "SGOT / AST": {
+            "value": "",
+            "unit": "U/L",
+            "range": "5 - 40 U/L",
+            "flag": "normal"
+          },
+          "SGPT / ALT": {
+            "value": "",
+            "unit": "U/L",
+            "range": "5 - 45 U/L",
+            "flag": "normal"
+          },
+          "Alkaline Phosphatase (ALP)": {
+            "value": "",
+            "unit": "U/L",
+            "range": "30 - 120 U/L",
+            "flag": "normal"
+          },
+          "Total Protein": {
+            "value": "",
+            "unit": "g/dL",
+            "range": "6.0 - 8.3 g/dL",
+            "flag": "normal"
+          },
+          "Serum Albumin": {
+            "value": "",
+            "unit": "g/dL",
+            "range": "3.5 - 5.0 g/dL",
+            "flag": "normal"
+          },
+          "Serum Globulin": {
+            "value": "",
+            "unit": "g/dL",
+            "range": "2.0 - 3.5 g/dL",
+            "flag": "normal"
+          },
+          "A/G Ratio": {
+            "value": "",
+            "unit": "",
+            "range": "1.2 - 2.2",
+            "flag": "normal"
+          }
+        },
+        "remarks": "",
+        "status": "pending",
+        "technologist": "",
+        "pathologist": "",
+        "date": "2026-11-03T10:20:11.644Z"
+      },
+      {
+        "id": "rep_j29wyr5je",
+        "labId": "lab_5quu883vl",
+        "patientId": "pat_e4fnsiyzd",
+        "billNo": "BL-2026-0006",
+        "testId": "test_q14du5fxn",
+        "testName": "Urine Routine & Microscopic Examination",
+        "category": "Clinical Pathology",
+        "parametersData": {
+          "Color": {
+            "value": "",
+            "unit": "",
+            "range": "Pale Yellow",
+            "flag": "normal"
+          },
+          "Appearance / Transparency": {
+            "value": "",
+            "unit": "",
+            "range": "Clear",
+            "flag": "normal"
+          },
+          "Reaction / pH": {
+            "value": "",
+            "unit": "",
+            "range": "5.0 - 7.5 (Acidic to Neutral)",
+            "flag": "normal"
+          },
+          "Specific Gravity": {
+            "value": "",
+            "unit": "",
+            "range": "1.010 - 1.025",
+            "flag": "normal"
+          },
+          "Chemical - Albumin / Protein": {
+            "value": "",
+            "unit": "",
+            "range": "Nil / Negative",
+            "flag": "normal"
+          },
+          "Chemical - Sugar": {
+            "value": "",
+            "unit": "",
+            "range": "Nil / Negative",
+            "flag": "normal"
+          },
+          "Microscopic - Pus Cells": {
+            "value": "",
+            "unit": "/HPF",
+            "range": "0 - 5 / HPF",
+            "flag": "normal"
+          },
+          "Microscopic - RBCs": {
+            "value": "",
+            "unit": "/HPF",
+            "range": "Nil / 0-2 / HPF",
+            "flag": "normal"
+          },
+          "Microscopic - Epithelial Cells": {
+            "value": "",
+            "unit": "/HPF",
+            "range": "Few (1-3) / HPF",
+            "flag": "normal"
+          },
+          "Microscopic - Casts / Crystals": {
+            "value": "",
+            "unit": "",
+            "range": "Not Seen",
+            "flag": "normal"
+          }
+        },
+        "remarks": "",
+        "status": "pending",
+        "technologist": "",
+        "pathologist": "",
+        "date": "2026-11-03T11:42:27.058Z"
+      },
+      {
+        "id": "rep_j6d9l3r1v",
+        "labId": "lab_5quu883vl",
+        "patientId": "pat_2u6sl30b5",
+        "billNo": "BL-2026-0002",
+        "testId": "test_wnvr0ckkt",
+        "testName": "Widal Slide Agglutination (Typhoid)",
+        "category": "Serology",
+        "parametersData": {
+          "S. Typhi \"O\" (Somat)": {
+            "value": "",
+            "unit": "Titre",
+            "range": "Negative (< 1:80)",
+            "flag": "normal"
+          },
+          "S. Typhi \"H\" (Flagell)": {
+            "value": "",
+            "unit": "Titre",
+            "range": "Negative (< 1:80)",
+            "flag": "normal"
+          },
+          "S. Paratyphi \"AH\"": {
+            "value": "",
+            "unit": "Titre",
+            "range": "Negative (< 1:80)",
+            "flag": "normal"
+          },
+          "S. Paratyphi \"BH\"": {
+            "value": "",
+            "unit": "Titre",
+            "range": "Negative (< 1:80)",
+            "flag": "normal"
+          },
+          "Impression": {
+            "value": "45",
+            "unit": "",
+            "range": "No significant titre",
+            "flag": "normal"
+          }
+        },
+        "remarks": "",
+        "status": "in-progress",
+        "technologist": "Lab Technician (DMLT)",
+        "pathologist": "Consultant Pathologist (MD)",
+        "date": "2026-11-03T10:02:04.454Z",
+        "reportedDate": "2026-11-06T06:58:41.842Z"
+      },
+      {
+        "id": "rep_jl5cwgu4z",
+        "labId": "lab_5quu883vl",
+        "patientId": "pat_2u6sl30b5",
+        "billNo": "BL-2026-0002",
+        "testId": "test_7f0x8h4w0",
+        "testName": "Lipid Profile",
+        "category": "Biochemistry",
+        "parametersData": {
+          "Serum Cholesterol (Total)": {
+            "value": "199",
+            "unit": "mg/dL",
+            "range": "< 200 mg/dL Desirable",
+            "flag": "normal"
+          },
+          "Serum Triglycerides": {
+            "value": "144",
+            "unit": "mg/dL",
+            "range": "< 150 mg/dL Normal",
+            "flag": "normal"
+          },
+          "HDL Cholesterol": {
+            "value": "155",
+            "unit": "mg/dL",
+            "range": "> 40 mg/dL (Male) | > 50 mg/dL (Female)",
+            "flag": "high"
+          },
+          "LDL Cholesterol": {
+            "value": "125",
+            "unit": "mg/dL",
+            "range": "< 100 mg/dL Optimal",
+            "flag": "high"
+          },
+          "VLDL Cholesterol": {
+            "value": "123",
+            "unit": "mg/dL",
+            "range": "5 - 30 mg/dL",
+            "flag": "high"
+          },
+          "Total / HDL Ratio": {
+            "value": "146",
+            "unit": "",
+            "range": "3.0 - 5.0",
+            "flag": "high"
+          }
+        },
+        "remarks": "",
+        "status": "completed",
+        "technologist": "Lab Technician (DMLT)",
+        "pathologist": "Consultant Pathologist (MD)",
+        "date": "2026-11-03T10:02:04.454Z",
+        "reportedDate": "2026-11-06T06:58:41.843Z"
+      },
+      {
+        "id": "rep_jo6v7731x",
+        "labId": "lab_5quu883vl",
+        "patientId": "pat_e4fnsiyzd",
+        "billNo": "BL-2026-0006",
+        "testId": "test_ojc42gxdt",
+        "testName": "HbA1c (Glycated Hemoglobin)",
+        "category": "Biochemistry",
+        "parametersData": {
+          "HbA1c": {
+            "value": "",
+            "unit": "%",
+            "range": "< 5.7 % (Normal)\n5.7 - 6.4 % (Prediabetes)\n>= 6.5 % (Diabetic)",
+            "flag": "normal"
+          },
+          "Estimated Average Glucose (eAG)": {
+            "value": "",
+            "unit": "mg/dL",
+            "range": "70 - 126 mg/dL",
+            "flag": "normal"
+          }
+        },
+        "remarks": "",
+        "status": "pending",
+        "technologist": "",
+        "pathologist": "",
+        "date": "2026-11-03T11:42:27.058Z"
+      },
+      {
+        "id": "rep_mobrs6p3m",
+        "labId": "lab_5quu883vl",
+        "patientId": "pat_4ycoglqte",
+        "billNo": "BL-2026-0003",
+        "testId": "test_bqhht6akc",
+        "testName": "Blood Glucose (Post Prandial - PPBS)",
+        "category": "Biochemistry",
+        "parametersData": {
+          "Blood Glucose PP": {
+            "value": "",
+            "unit": "mg/dL",
+            "range": "Up to 140 mg/dL",
+            "flag": "normal"
+          }
+        },
+        "remarks": "",
+        "status": "pending",
+        "technologist": "",
+        "pathologist": "",
+        "date": "2026-11-03T10:20:11.644Z"
+      },
+      {
+        "id": "rep_o7l6l4w3y",
+        "labId": "lab_5quu883vl",
+        "patientId": "pat_mj718c8id",
+        "billNo": "BL-2026-0005",
+        "testId": "test_bqhht6akc",
+        "testName": "Blood Glucose (Post Prandial - PPBS)",
+        "category": "Biochemistry",
+        "parametersData": {
+          "Blood Glucose PP": {
+            "value": "125",
+            "unit": "mg/dL",
+            "range": "Up to 140 mg/dL",
+            "flag": "normal"
+          }
+        },
+        "remarks": "backup test",
+        "status": "completed",
+        "technologist": "Lab Technician (DMLT)",
+        "pathologist": "Consultant Pathologist (MD)",
+        "date": "2026-11-03T11:39:01.238Z",
+        "reportedDate": "2026-11-06T06:57:22.128Z"
+      },
+      {
+        "id": "rep_uf5yoxgqj",
+        "labId": "lab_5quu883vl",
+        "patientId": "pat_mj718c8id",
+        "billNo": "BL-2026-0005",
+        "testId": "test_0chtlkpo9",
+        "testName": "Thyroid Profile (Total T3, T4, TSH)",
+        "category": "Serology / Endocrinology",
+        "parametersData": {
+          "Total Triiodothyronine (T3)": {
+            "value": "1.1",
+            "unit": "ng/mL",
+            "range": "0.8 - 2.0 ng/mL",
+            "flag": "normal"
+          },
+          "Total Thyroxine (T4)": {
+            "value": "8.4",
+            "unit": "ug/dL",
+            "range": "5.1 - 14.1 ug/dL",
+            "flag": "normal"
+          },
+          "TSH (Ultrasensitive)": {
+            "value": "2.86",
+            "unit": "uIU/mL",
+            "range": "0.40 - 4.50 uIU/mL",
+            "flag": "normal"
+          }
+        },
+        "remarks": "",
+        "status": "completed",
+        "technologist": "Lab Technician (DMLT)",
+        "pathologist": "Consultant Pathologist (MD)",
+        "date": "2026-11-03T11:39:01.238Z",
+        "reportedDate": "2026-11-06T06:57:22.131Z"
+      },
+      {
+        "id": "rep_uquq7s42m",
+        "labId": "lab_5quu883vl",
+        "patientId": "pat_e4fnsiyzd",
+        "billNo": "BL-2026-0006",
+        "testId": "test_bqhht6akc",
+        "testName": "Blood Glucose (Post Prandial - PPBS)",
+        "category": "Biochemistry",
+        "parametersData": {
+          "Blood Glucose PP": {
+            "value": "",
+            "unit": "mg/dL",
+            "range": "Up to 140 mg/dL",
+            "flag": "normal"
+          }
+        },
+        "remarks": "",
+        "status": "pending",
+        "technologist": "",
+        "pathologist": "",
+        "date": "2026-11-03T11:42:27.058Z"
+      },
+      {
+        "id": "rep_xi488o0u2",
+        "labId": "lab_5quu883vl",
+        "patientId": "pat_e4fnsiyzd",
+        "billNo": "BL-2026-0006",
+        "testId": "test_7f0x8h4w0",
+        "testName": "Lipid Profile",
+        "category": "Biochemistry",
+        "parametersData": {
+          "Serum Cholesterol (Total)": {
+            "value": "",
+            "unit": "mg/dL",
+            "range": "< 200 mg/dL Desirable",
+            "flag": "normal"
+          },
+          "Serum Triglycerides": {
+            "value": "",
+            "unit": "mg/dL",
+            "range": "< 150 mg/dL Normal",
+            "flag": "normal"
+          },
+          "HDL Cholesterol": {
+            "value": "",
+            "unit": "mg/dL",
+            "range": "> 40 mg/dL (Male) | > 50 mg/dL (Female)",
+            "flag": "normal"
+          },
+          "LDL Cholesterol": {
+            "value": "",
+            "unit": "mg/dL",
+            "range": "< 100 mg/dL Optimal",
+            "flag": "normal"
+          },
+          "VLDL Cholesterol": {
+            "value": "",
+            "unit": "mg/dL",
+            "range": "5 - 30 mg/dL",
+            "flag": "normal"
+          },
+          "Total / HDL Ratio": {
+            "value": "",
+            "unit": "",
+            "range": "3.0 - 5.0",
+            "flag": "normal"
+          }
+        },
+        "remarks": "",
+        "status": "pending",
+        "technologist": "",
+        "pathologist": "",
+        "date": "2026-11-03T11:42:27.058Z"
+      },
+      {
+        "id": "rep_z20xdnn1u",
+        "labId": "lab_5quu883vl",
+        "patientId": "pat_4ycoglqte",
+        "billNo": "BL-2026-0003",
+        "testId": "test_0chtlkpo9",
+        "testName": "Thyroid Profile (Total T3, T4, TSH)",
+        "category": "Serology / Endocrinology",
+        "parametersData": {
+          "Total Triiodothyronine (T3)": {
+            "value": "",
+            "unit": "ng/mL",
+            "range": "0.8 - 2.0 ng/mL",
+            "flag": "normal"
+          },
+          "Total Thyroxine (T4)": {
+            "value": "",
+            "unit": "ug/dL",
+            "range": "5.1 - 14.1 ug/dL",
+            "flag": "normal"
+          },
+          "TSH (Ultrasensitive)": {
+            "value": "",
+            "unit": "uIU/mL",
+            "range": "0.40 - 4.50 uIU/mL",
+            "flag": "normal"
+          }
+        },
+        "remarks": "",
+        "status": "pending",
+        "technologist": "",
+        "pathologist": "",
+        "date": "2026-11-03T10:20:11.644Z"
+      }
+    ],
+    "settings": [
+      {
+        "key": "auto_backup_config",
+        "folderName": "LAB Backup",
+        "handle": {},
+        "enabled": true,
+        "lastBackupTime": "2026-11-06T07:04:24.726Z",
+        "updatedAt": "2026-11-06T07:01:43.590Z"
+      }
+    ]
+  }
+}

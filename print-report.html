@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lab Examination Report - Print & PDF</title>
+  <link rel="stylesheet" href="assets/css/style.css?v=2.1">
+  <link rel="stylesheet" href="assets/css/print.css?v=2.1">
+  <script src="assets/vendor/html2pdf.bundle.min.js"></script>
+
+  <style>
+    /* Standalone Print Page Specific Styles */
+    body {
+      background: #475569;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    /* Fixed Floating Top Control Bar (Never Printed) */
+    .print-toolbar {
+      position: sticky;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #0f172a;
+      color: #fff;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    .toolbar-left, .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-title {
+      font-weight: 700;
+      font-size: 14px;
+      color: #38bdf8;
+      margin-right: 8px;
+    }
+
+    .print-page-wrapper {
+      padding: 30px 0 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #334155;
+      min-height: calc(100vh - 60px);
+    }
+
+    #report-to-print {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Strict Zero-Scrollbar and Clean A4 Page Media Rules */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 0;
+      }
+
+      html, body {
+        background: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+      }
+
+      .print-toolbar,
+      .no-print {
+        display: none !important;
+      }
+
+      .print-page-wrapper {
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+        display: block !important;
+        min-height: auto !important;
+      }
+
+      #report-to-print {
+        display: block !important;
+        width: 100% !important;
+      }
+
+      .a4-page-sheet {
+        box-shadow: none !important;
+        border: none !important;
+        width: 210mm !important;
+        height: 296mm !important;
+        min-height: 296mm !important;
+        max-height: 296mm !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+      }
+
+      .a4-page-sheet:last-child {
+        page-break-after: auto !important;
+        break-after: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- FLOATING TOP TOOLBAR (HIDDEN IN PRINT / PDF) -->
+  <div class="print-toolbar no-print">
+    <div class="toolbar-left">
+      <span class="toolbar-title">🖨️ Multi-Page Print & PDF:</span>
+      
+      <!-- Mode 1: Full Report -->
+      <button id="btn-mode-full" class="btn btn-primary btn-sm" onclick="setMode('full')">
+        📄 Mode 1: With Letterhead
+      </button>
+
+      <!-- Mode 2: Pre-printed Letterhead -->
+      <button id="btn-mode-letterhead" class="btn btn-outline btn-sm" style="color:#fff; border-color:#64748b;" onclick="setMode('letterhead')">
+        📑 Mode 2: Without Letterhead
+      </button>
+
+      <!-- 3 Padding Inputs (Top, Bottom, Left/Right Side) -->
+      <div class="padding-control-group" style="display:flex; align-items:center; gap:8px; background:#1e293b; padding:4px 10px; border-radius:6px; border:1px solid #334155;">
+        <span style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;">📏 Margins (mm):</span>
+        
+        <label style="display:flex; align-items:center; gap:3px; font-size:11.5px; color:#cbd5e1;" title="Top Padding / Margin (mm)">
+          <span>Top:</span>
+          <input type="number" id="input-pad-top" min="0" max="150" step="1" value="10"
+            style="width:52px; padding:2px 5px; font-size:12px; font-weight:700; border-radius:4px; border:1px solid #475569; background:#0f172a; color:#38bdf8; text-align:center;"
+            oninput="triggerPaddingChange()">
+        </label>
+
+        <label style="display:flex; align-items:center; gap:3px; font-size:11.5px; color:#cbd5e1;" title="Bottom Padding / Margin (mm)">
+          <span>Bottom:</span>
+          <input type="number" id="input-pad-bottom" min="0" max="120" step="1" value="10"
+            style="width:52px; padding:2px 5px; font-size:12px; font-weight:700; border-radius:4px; border:1px solid #475569; background:#0f172a; color:#38bdf8; text-align:center;"
+            oninput="triggerPaddingChange()">
+        </label>
+
+        <label style="display:flex; align-items:center; gap:3px; font-size:11.5px; color:#cbd5e1;" title="Left & Right Side Padding (mm) - Both Sides Equal">
+          <span>Left/Right:</span>
+          <input type="number" id="input-pad-side" min="0" max="50" step="1" value="12"
+            style="width:52px; padding:2px 5px; font-size:12px; font-weight:700; border-radius:4px; border:1px solid #475569; background:#0f172a; color:#38bdf8; text-align:center;"
+            oninput="triggerPaddingChange()">
+        </label>
+
+        <button type="button" class="btn btn-outline btn-sm" onclick="resetDefaultPaddings()" style="padding:1px 6px; font-size:10.5px; color:#94a3b8; border-color:#475569;" title="Reset to standard defaults">
+          ↺ Reset
+        </button>
+      </div>
+    </div>
+
+    <div class="toolbar-right">
+      <!-- Direct 1-Click PDF Download -->
+      <button class="btn btn-success btn-sm" onclick="downloadDirectPDF()" title="Download genuine Multi-Page PDF file directly">
+        📥 Download PDF
+      </button>
+
+      <!-- Native Browser Print (A4) -->
+      <button class="btn btn-primary btn-sm" onclick="triggerBrowserPrint()" title="Print via HP Printer or Chrome Save as PDF">
+        🖨️ Print / Save as PDF
+      </button>
+
+      <!-- Close / Back -->
+      <button class="btn btn-outline btn-sm" style="color:#cbd5e1; border-color:#64748b;" onclick="window.close(); history.back();">
+        ✕ Close
+      </button>
+    </div>
+  </div>
+
+  <!-- A4 REPORT PAGES CONTAINER -->
+  <div class="print-page-wrapper">
+    <div id="report-to-print">
+      <div style="text-align:center; padding: 40px; color:#fff;">
+        Report load ho raha hai...
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <!-- SCRIPTS -->
+  <script src="assets/js/db.js?v=2.3"></script>
+  <script src="assets/js/tests-catalog.js?v=2.3"></script>
+  <script src="assets/js/auth.js?v=2.3"></script>
+  <script src="assets/js/doctors.js?v=2.3"></script>
+  <script src="assets/js/patient-billing.js?v=2.3"></script>
+  <script src="assets/js/report-entry.js?v=2.3"></script>
+  <script src="assets/js/report-print.js?v=2.3"></script>
+
+  <script>
+    // Global fallback error traps so screen never freezes silently
+    window.addEventListener('error', function(e) {
+      console.error('Window error in print-report:', e);
+      const container = document.getElementById('report-to-print');
+      if (container && container.innerHTML.includes('Report load ho raha hai...')) {
+        container.innerHTML = `
+          <div style="padding:40px; text-align:center; color:#fee2e2;">
+            <h3>Report Load Error:</h3>
+            <p style="color:#fca5a5; font-family:monospace; margin-top:8px;">${e.message || 'Script execution error'}</p>
+            <button class="btn btn-primary btn-sm" onclick="location.reload();" style="margin-top:12px;">Retry / Reload</button>
+          </div>
+        `;
+      }
+    });
+
+    window.addEventListener('unhandledrejection', function(e) {
+      console.error('Unhandled rejection in print-report:', e);
+      const container = document.getElementById('report-to-print');
+      if (container && container.innerHTML.includes('Report load ho raha hai...')) {
+        container.innerHTML = `
+          <div style="padding:40px; text-align:center; color:#fee2e2;">
+            <h3>Database / Load Error:</h3>
+            <p style="color:#fca5a5; font-family:monospace; margin-top:8px;">${(e.reason && e.reason.message) || e.reason || 'Storage rejection error'}</p>
+            <button class="btn btn-primary btn-sm" onclick="location.reload();" style="margin-top:12px;">Retry / Reload</button>
+          </div>
+        `;
+      }
+    });
+
+    let currentMode = 'full';
+    let currentPatientId = null;
+    let patientData = null;
+    let renderTimer = null;
+    let loadWatchdog = null;
+
+    // Default Paddings (mm) for each mode
+    const MODE_DEFAULTS = {
+      full: { top: 10, bottom: 10, side: 12 },
+      letterhead: { top: 45, bottom: 20, side: 12 }
+    };
+
+    async function loadReport() {
+      // 6-second watchdog timer to prevent indefinite loading freeze
+      loadWatchdog = setTimeout(() => {
+        const container = document.getElementById('report-to-print');
+        if (container && container.innerHTML.includes('Report load ho raha hai...')) {
+          container.innerHTML = `
+            <div style="padding:40px; text-align:center; color:#fee2e2;">
+              <h3>Report Load Timeout</h3>
+              <p style="color:#cbd5e1; margin-top:6px;">Database response slow hai ya dusre browser tab me database lock hai.</p>
+              <button class="btn btn-primary btn-sm" onclick="location.reload();" style="margin-top:14px;">Reload Page ↺</button>
+            </div>
+          `;
+        }
+      }, 6000);
+
+      try {
+        await window.labDB.init();
+        await window.authManager.init();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        currentPatientId = urlParams.get('id');
+        const initialMode = urlParams.get('mode') || 'full';
+
+        if (!currentPatientId) {
+          clearTimeout(loadWatchdog);
+          document.getElementById('report-to-print').innerHTML = `
+            <div style="padding:40px; text-align:center; color:#fee2e2;">
+              <h3>Patient ID nahi mila!</h3>
+              <p>Kripya Patients & Reports list se report open karein.</p>
+              <button class="btn btn-primary btn-sm" onclick="window.close(); history.back();" style="margin-top:12px;">Wapas Jayein</button>
+            </div>
+          `;
+          return;
+        }
+
+        patientData = await window.labDB.get('patients', currentPatientId);
+        if (!patientData) {
+          clearTimeout(loadWatchdog);
+          document.getElementById('report-to-print').innerHTML = `
+            <div style="padding:40px; text-align:center; color:#fee2e2;">
+              <h3>Patient Record nahi mila (${currentPatientId})</h3>
+              <p>Ho sakta hai ye patient delete ho gaya ho ya URL ID galat ho.</p>
+              <button class="btn btn-primary btn-sm" onclick="window.close(); history.back();" style="margin-top:12px;">Wapas Jayein</button>
+            </div>
+          `;
+          return;
+        }
+
+        setMode(initialMode);
+      } catch (err) {
+        clearTimeout(loadWatchdog);
+        console.error('loadReport error:', err);
+        document.getElementById('report-to-print').innerHTML = `
+          <div style="padding:40px; text-align:center; color:#fee2e2;">
+            <h3>Report load karne me samasya:</h3>
+            <p style="color:#fca5a5; font-family:monospace; margin-top:8px;">${err.message}</p>
+            <button class="btn btn-primary btn-sm" onclick="location.reload();" style="margin-top:12px;">Retry / Reload</button>
+          </div>
+        `;
+      }
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      const btnFull = document.getElementById('btn-mode-full');
+      const btnLetter = document.getElementById('btn-mode-letterhead');
+
+      if (mode === 'full') {
+        btnFull.className = 'btn btn-primary btn-sm';
+        btnLetter.className = 'btn btn-outline btn-sm';
+        btnLetter.style.color = '#fff';
+        btnLetter.style.borderColor = '#64748b';
+      } else {
+        btnLetter.className = 'btn btn-primary btn-sm';
+        btnFull.className = 'btn btn-outline btn-sm';
+        btnFull.style.color = '#fff';
+        btnFull.style.borderColor = '#64748b';
+      }
+
+      // Populate default padding inputs for selected mode
+      const defaults = MODE_DEFAULTS[mode] || MODE_DEFAULTS.full;
+      document.getElementById('input-pad-top').value = defaults.top;
+      document.getElementById('input-pad-bottom').value = defaults.bottom;
+      document.getElementById('input-pad-side').value = defaults.side;
+
+      renderReportHTML();
+    }
+
+    function resetDefaultPaddings() {
+      const defaults = MODE_DEFAULTS[currentMode] || MODE_DEFAULTS.full;
+      document.getElementById('input-pad-top').value = defaults.top;
+      document.getElementById('input-pad-bottom').value = defaults.bottom;
+      document.getElementById('input-pad-side').value = defaults.side;
+      renderReportHTML();
+      showToast(`Paddings reset to standard (${defaults.top}mm / ${defaults.bottom}mm / ${defaults.side}mm)`, 'info');
+    }
+
+    function triggerPaddingChange() {
+      clearTimeout(renderTimer);
+      renderTimer = setTimeout(() => {
+        renderReportHTML();
+      }, 120);
+    }
+
+    async function renderReportHTML() {
+      try {
+        const padTop = parseFloat(document.getElementById('input-pad-top')?.value) || 10;
+        const padBottom = parseFloat(document.getElementById('input-pad-bottom')?.value) || 10;
+        const padSide = parseFloat(document.getElementById('input-pad-side')?.value) || 12;
+
+        if (!window.reportPrintManager) {
+          throw new Error('reportPrintManager load nahi hua.');
+        }
+
+        const html = await window.reportPrintManager.generateReportHTML(
+          currentPatientId,
+          currentMode,
+          padTop,
+          padBottom,
+          padSide
+        );
+        
+        const container = document.getElementById('report-to-print');
+        container.innerHTML = html;
+        if (typeof loadWatchdog !== 'undefined' && loadWatchdog) {
+          clearTimeout(loadWatchdog);
+        }
+      } catch (err) {
+        console.error('renderReportHTML error:', err);
+        document.getElementById('report-to-print').innerHTML = `
+          <div style="padding:40px; text-align:center; color:#fee2e2;">
+            <h3>Report Render Error:</h3>
+            <p style="color:#fca5a5; font-family:monospace; margin-top:8px;">${err.message}</p>
+            <button class="btn btn-primary btn-sm" onclick="location.reload();" style="margin-top:12px;">Retry / Reload</button>
+          </div>
+        `;
+      }
+    }
+
+    function triggerBrowserPrint() {
+      window.print();
+    }
+
+    // Direct 1-Click Multi-Page PDF Download
+    function downloadDirectPDF() {
+      const element = document.getElementById('report-to-print');
+      const patName = (patientData?.name || 'Patient').replace(/[^a-zA-Z0-9]/g, '_');
+      const billNo = (patientData?.billNo || 'Report').replace(/[^a-zA-Z0-9]/g, '_');
+      const filename = `Report_${patName}_${billNo}.pdf`;
+
+      showToast('Multi-Page PDF generate ho raha hai, download shuru hoga...', 'info');
+
+      const opt = {
+        margin: [0, 0, 0, 0],
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollX: 0, scrollY: 0 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'], after: '.a4-page-sheet' }
+      };
+
+      html2pdf().set(opt).from(element).save().then(() => {
+        showToast('PDF successfully download ho gaya!', 'success');
+      }).catch(err => {
+        console.error('PDF error:', err);
+        showToast('PDF download me samasya: ' + err.message, 'error');
+      });
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `<span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function initReport() {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadReport);
+      } else {
+        loadReport();
+      }
+    }
+    initReport();
+  </script>
+
+</body>
+</html>
