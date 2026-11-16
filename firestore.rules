@@ -1,0 +1,736 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Root Collections:
+//
+// 1. Collection: labs/{labId}
+//    Document ID: labId (e.g. lab_xxxxxxxxx)
+//    Fields:
+//      - id: string (required, matches labId, immutable)
+//      - name: string (required, 1..150 chars)
+//      - tagline: string (optional, 0..200 chars)
+//      - address: string (optional, 0..300 chars)
+//      - phone: string (optional, 0..30 chars)
+//      - email: string (optional, valid email, 0..100 chars)
+//      - regNo: string (optional, 0..100 chars)
+//      - adminUid: string (required, creator UID == request.auth.uid, immutable)
+//      - adminEmail: string (required, valid email, 0..100 chars, immutable)
+//      - createdAt: string | timestamp (required, immutable)
+//      - updatedAt: string | timestamp (optional)
+//      - lastSyncedAt: string | timestamp (optional)
+//      - technologistName: string (optional, 0..100 chars)
+//      - pathologistName: string (optional, 0..100 chars)
+//      - letterheadTopMargin: number (optional, 0..500)
+//      - logoBase64: string (optional, 0..500000 chars)
+//
+// 2. Collection: users/{userId}
+//    Document ID: userId (matches request.auth.uid)
+//    Fields:
+//      - uid: string (required, matches userId == request.auth.uid, immutable)
+//      - id: string (optional, 0..50 chars)
+//      - email: string (required, valid email, 0..100 chars)
+//      - name: string (required, 1..100 chars)
+//      - phone: string (optional, 0..30 chars)
+//      - username: string (optional, 0..50 chars)
+//      - role: string (required, 'admin' | 'staff', non-escalatable)
+//      - labId: string (required, 1..50 chars, immutable)
+//      - labName: string (optional, 0..150 chars)
+//      - permissions: map (optional, size <= 20 keys)
+//      - pin: string (optional, 0..20 chars)
+//      - pinHash: string (optional, 0..128 chars)
+//      - isActivated: bool (optional)
+//      - active: bool (optional)
+//      - createdAt: string | timestamp (required, immutable)
+//      - activatedAt: string | timestamp (optional)
+//
+// 3. Collection: staff_invites/{email}
+//    Document ID: email (lowercase email)
+//    Fields:
+//      - email: string (required, valid email, matches doc ID, immutable)
+//      - name: string (required, 1..100 chars)
+//      - phone: string (optional, 0..30 chars)
+//      - labId: string (required, 1..50 chars, immutable)
+//      - labName: string (optional, 0..150 chars)
+//      - adminEmail: string (optional, 0..100 chars)
+//      - permissions: map (optional, size <= 20 keys)
+//      - status: string (required, 'pending' | 'activated')
+//      - invitedAt: string | timestamp (optional)
+//      - activatedUid: string (optional, 0..128 chars)
+//      - activatedAt: string | timestamp (optional)
+//
+// 4. Collection: _system_health/{docId}
+//    Document ID: 'ping'
+//    Fields:
+//      - lastPing: string | timestamp (required, 0..50 chars)
+//
+// Subcollections under labs/{labId}:
+//
+// 5. Collection: labs/{labId}/patients/{patientId}
+//    Document ID: patientId (e.g. pat_xxxxxxxxx)
+//    Fields:
+//      - id: string (required, matches patientId, immutable)
+//      - labId: string (required, matches labId, immutable)
+//      - uhid: string (optional, 0..50 chars, immutable)
+//      - billNo: string (optional, 0..50 chars, immutable)
+//      - name: string (required, 1..150 chars)
+//      - age: number | string (required, 0..150 if number, <= 10 chars if string)
+//      - ageUnit: string (optional, 0..20 chars)
+//      - gender: string (required, 0..20 chars)
+//      - phone: string (optional, 0..30 chars)
+//      - address: string (optional, 0..300 chars)
+//      - doctorId: string (optional, 0..50 chars)
+//      - doctorName: string (optional, 0..150 chars)
+//      - doctorCommissionRate: number (optional, 0..100)
+//      - testIds: list (optional, size <= 100 items)
+//      - testNames: list (optional, size <= 100 items)
+//      - subtotal: number (required, >= 0)
+//      - discountAmount: number (optional, >= 0)
+//      - discountApproved: bool (optional)
+//      - discountApprovedBy: string (optional, 0..150 chars)
+//      - finalAmount: number (required, >= 0)
+//      - paidAmount: number (required, >= 0)
+//      - paymentMode: string (optional, 0..50 chars)
+//      - status: string (optional, 0..50 chars)
+//      - createdBy: string (optional, 0..150 chars)
+//      - createdRole: string (optional, 0..50 chars)
+//      - date: string | timestamp (optional, immutable)
+//      - isHidden: bool (optional)
+//      - hiddenAt: string | timestamp (optional)
+//      - hiddenBy: string (optional, 0..150 chars)
+//      - voidReason: string (optional, 0..300 chars)
+//      - voidedBy: string (optional, 0..150 chars)
+//      - voidedAt: string | timestamp (optional)
+//
+// 6. Collection: labs/{labId}/reports/{reportId}
+//    Document ID: reportId (e.g. rep_xxxxxxxxx)
+//    Fields:
+//      - id: string (required, matches reportId, immutable)
+//      - labId: string (required, matches labId, immutable)
+//      - patientId: string (required, 1..50 chars, immutable)
+//      - billNo: string (optional, 0..50 chars)
+//      - testId: string (required, 1..50 chars, immutable)
+//      - testName: string (optional, 0..150 chars)
+//      - category: string (optional, 0..100 chars)
+//      - parametersData: map (required, lab test parameter results)
+//      - remarks: string (optional, 0..500 chars)
+//      - status: string (optional, 0..50 chars)
+//      - technologist: string (optional, 0..100 chars)
+//      - pathologist: string (optional, 0..100 chars)
+//      - date: string | timestamp (optional)
+//      - reportedDate: string | timestamp (optional)
+//
+// 7. Collection: labs/{labId}/doctors/{doctorId}
+//    Document ID: doctorId (e.g. doc_xxxxxxxxx)
+//    Fields:
+//      - id: string (required, matches doctorId, immutable)
+//      - labId: string (required, matches labId, immutable)
+//      - name: string (required, 1..150 chars)
+//      - degree: string (optional, 0..100 chars)
+//      - hospital: string (optional, 0..150 chars)
+//      - phone: string (optional, 0..30 chars)
+//      - commissionRate: number (required, 0..100)
+//      - createdAt: string | timestamp (optional, immutable)
+//
+// 8. Collection: labs/{labId}/test_catalog/{testId}
+//    Document ID: testId (e.g. test_xxxxxxxxx)
+//    Fields:
+//      - id: string (required, matches testId, immutable)
+//      - labId: string (required, matches labId, immutable)
+//      - code: string (optional, 0..50 chars)
+//      - name: string (required, 1..150 chars)
+//      - category: string (optional, 0..100 chars)
+//      - price: number (required, >= 0)
+//      - parameters: list (optional, size <= 100 items)
+//      - createdAt: string | timestamp (optional, immutable)
+//
+// 9. Collection: labs/{labId}/staff/{staffUserId}
+//    Document ID: staffUserId (mirror of user doc in lab scope)
+//    Fields:
+//      - id: string (required, matches staffUserId, immutable)
+//      - uid: string (optional, 0..128 chars)
+//      - labId: string (required, matches labId, immutable)
+//      - name: string (required, 1..100 chars)
+//      - email: string (required, valid email, 0..100 chars)
+//      - phone: string (optional, 0..30 chars)
+//      - username: string (optional, 0..50 chars)
+//      - role: string (required, 'admin' | 'staff')
+//      - permissions: map (optional, size <= 20 keys)
+//      - pin: string (optional, 0..20 chars)
+//      - pinHash: string (optional, 0..128 chars)
+//      - isActivated: bool (optional)
+//      - active: bool (optional)
+//      - createdAt: string | timestamp (optional)
+//      - activatedAt: string | timestamp (optional)
+//
+// 10. Collection: labs/{labId}/backups/{backupId}
+//     Document ID: backupId (e.g. 'latest')
+//     Fields:
+//       - labId: string (required, matches labId, immutable)
+//       - exportedAt: string | timestamp (optional)
+//       - counts: map (optional)
+//       - snapshotJson: string (required, max 1048576 chars / 1MB)
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Root Level Deny-All Default
+    // ===============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isValidEmail(email) {
+      return email is string &&
+        email.size() > 3 &&
+        email.size() <= 100 &&
+        email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidOptionalStr(data, field, maxLen) {
+      return !(field in data) ||
+        (data[field] is string && data[field].size() <= maxLen);
+    }
+
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    function userDocExists() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function getUserProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function labDocExists(labId) {
+      return exists(/databases/$(database)/documents/labs/$(labId));
+    }
+
+    function getLabDoc(labId) {
+      return get(/databases/$(database)/documents/labs/$(labId)).data;
+    }
+
+    // Tenant Lab Membership Check:
+    // User is a verified member if their user profile points to this lab,
+    // or if they are recorded as the adminUid in the lab document.
+    function isLabMember(labId) {
+      return isAuthenticated() && (
+        (userDocExists() && getUserProfile().labId == labId) ||
+        (labDocExists(labId) && getLabDoc(labId).adminUid == request.auth.uid)
+      );
+    }
+
+    // Tenant Lab Admin Check:
+    // User is a lab admin if lab.adminUid == request.auth.uid
+    // or user profile in this lab has role == 'admin'.
+    function isLabAdmin(labId) {
+      return isAuthenticated() && (
+        (labDocExists(labId) && getLabDoc(labId).adminUid == request.auth.uid) ||
+        (userDocExists() && getUserProfile().labId == labId && getUserProfile().role == 'admin')
+      );
+    }
+
+    // ===============================================================
+    // Domain Validators (Used in both create AND update)
+    // ===============================================================
+
+    function isValidLab(data, labId) {
+      let allowedKeys = [
+        'id', 'name', 'tagline', 'address', 'phone', 'email', 'regNo',
+        'adminUid', 'adminEmail', 'createdAt', 'updatedAt', 'lastSyncedAt',
+        'technologistName', 'pathologistName', 'letterheadTopMargin', 'logoBase64'
+      ];
+      let requiredKeys = ['id', 'name', 'adminUid', 'adminEmail'];
+
+      return data.keys().hasOnly(allowedKeys) &&
+        data.keys().hasAll(requiredKeys) &&
+        data.id == labId &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
+        data.adminUid is string && data.adminUid.size() <= 128 &&
+        isValidEmail(data.adminEmail) &&
+        isValidOptionalStr(data, 'tagline', 200) &&
+        isValidOptionalStr(data, 'address', 300) &&
+        isValidOptionalStr(data, 'phone', 30) &&
+        (!('email' in data) || isValidEmail(data.email)) &&
+        isValidOptionalStr(data, 'regNo', 100) &&
+        isValidOptionalStr(data, 'technologistName', 100) &&
+        isValidOptionalStr(data, 'pathologistName', 100) &&
+        isValidOptionalStr(data, 'logoBase64', 500000) &&
+        (!('letterheadTopMargin' in data) || (data.letterheadTopMargin is number && data.letterheadTopMargin >= 0 && data.letterheadTopMargin <= 500));
+    }
+
+    function isValidUser(data, userId) {
+      let allowedKeys = [
+        'uid', 'id', 'email', 'name', 'phone', 'username', 'role',
+        'labId', 'labName', 'permissions', 'pin', 'pinHash',
+        'isActivated', 'active', 'createdAt', 'activatedAt'
+      ];
+      let requiredKeys = ['uid', 'email', 'name', 'role', 'labId'];
+
+      return data.keys().hasOnly(allowedKeys) &&
+        data.keys().hasAll(requiredKeys) &&
+        data.uid == userId &&
+        isValidEmail(data.email) &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+        (data.role == 'admin' || data.role == 'staff') &&
+        data.labId is string && data.labId.size() > 0 && data.labId.size() <= 50 &&
+        isValidOptionalStr(data, 'id', 50) &&
+        isValidOptionalStr(data, 'phone', 30) &&
+        isValidOptionalStr(data, 'username', 50) &&
+        isValidOptionalStr(data, 'labName', 150) &&
+        isValidOptionalStr(data, 'pin', 20) &&
+        isValidOptionalStr(data, 'pinHash', 128) &&
+        (!('permissions' in data) || (data.permissions is map && data.permissions.size() <= 20)) &&
+        (!('isActivated' in data) || data.isActivated is bool) &&
+        (!('active' in data) || data.active is bool);
+    }
+
+    function isValidStaffInvite(data, email) {
+      let allowedKeys = [
+        'email', 'name', 'phone', 'labId', 'labName',
+        'adminEmail', 'permissions', 'status', 'invitedAt',
+        'activatedUid', 'activatedAt'
+      ];
+      let requiredKeys = ['email', 'name', 'labId', 'status'];
+
+      return data.keys().hasOnly(allowedKeys) &&
+        data.keys().hasAll(requiredKeys) &&
+        data.email.lower() == email.lower() &&
+        isValidEmail(data.email) &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+        data.labId is string && data.labId.size() > 0 && data.labId.size() <= 50 &&
+        (data.status == 'pending' || data.status == 'activated') &&
+        isValidOptionalStr(data, 'phone', 30) &&
+        isValidOptionalStr(data, 'labName', 150) &&
+        isValidOptionalStr(data, 'adminEmail', 100) &&
+        isValidOptionalStr(data, 'activatedUid', 128) &&
+        (!('permissions' in data) || (data.permissions is map && data.permissions.size() <= 20));
+    }
+
+    function isValidPatient(data, labId, patientId) {
+      let allowedKeys = [
+        'id', 'labId', 'uhid', 'billNo', 'name', 'age', 'ageUnit', 'gender',
+        'phone', 'address', 'doctorId', 'doctorName', 'doctorCommissionRate',
+        'testIds', 'testNames', 'subtotal', 'discountAmount', 'discountApproved',
+        'discountApprovedBy', 'finalAmount', 'paidAmount', 'paymentMode', 'status',
+        'createdBy', 'createdRole', 'date', 'isHidden', 'hiddenAt', 'hiddenBy',
+        'voidReason', 'voidedBy', 'voidedAt'
+      ];
+      let requiredKeys = ['id', 'labId', 'name', 'gender', 'subtotal', 'finalAmount', 'paidAmount'];
+
+      return data.keys().hasOnly(allowedKeys) &&
+        data.keys().hasAll(requiredKeys) &&
+        data.id == patientId &&
+        data.labId == labId &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
+        data.gender is string && data.gender.size() <= 20 &&
+        (
+          (data.age is number && data.age >= 0 && data.age <= 150) ||
+          (data.age is string && data.age.size() > 0 && data.age.size() <= 10)
+        ) &&
+        data.subtotal is number && data.subtotal >= 0 &&
+        data.finalAmount is number && data.finalAmount >= 0 &&
+        data.paidAmount is number && data.paidAmount >= 0 &&
+        (!('discountAmount' in data) || (data.discountAmount is number && data.discountAmount >= 0)) &&
+        (!('doctorCommissionRate' in data) || (data.doctorCommissionRate is number && data.doctorCommissionRate >= 0 && data.doctorCommissionRate <= 100)) &&
+        (!('testIds' in data) || (data.testIds is list && data.testIds.size() <= 100)) &&
+        (!('testNames' in data) || (data.testNames is list && data.testNames.size() <= 100)) &&
+        isValidOptionalStr(data, 'uhid', 50) &&
+        isValidOptionalStr(data, 'billNo', 50) &&
+        isValidOptionalStr(data, 'ageUnit', 20) &&
+        isValidOptionalStr(data, 'phone', 30) &&
+        isValidOptionalStr(data, 'address', 300) &&
+        isValidOptionalStr(data, 'doctorId', 50) &&
+        isValidOptionalStr(data, 'doctorName', 150) &&
+        isValidOptionalStr(data, 'paymentMode', 50) &&
+        isValidOptionalStr(data, 'status', 50) &&
+        isValidOptionalStr(data, 'createdBy', 150) &&
+        isValidOptionalStr(data, 'createdRole', 50) &&
+        isValidOptionalStr(data, 'discountApprovedBy', 150) &&
+        isValidOptionalStr(data, 'hiddenBy', 150) &&
+        isValidOptionalStr(data, 'voidReason', 300) &&
+        isValidOptionalStr(data, 'voidedBy', 150) &&
+        (!('discountApproved' in data) || data.discountApproved is bool) &&
+        (!('isHidden' in data) || data.isHidden is bool);
+    }
+
+    function isValidReport(data, labId, reportId) {
+      let allowedKeys = [
+        'id', 'labId', 'patientId', 'billNo', 'testId', 'testName',
+        'category', 'parametersData', 'remarks', 'status', 'technologist',
+        'pathologist', 'date', 'reportedDate'
+      ];
+      let requiredKeys = ['id', 'labId', 'patientId', 'testId', 'parametersData'];
+
+      return data.keys().hasOnly(allowedKeys) &&
+        data.keys().hasAll(requiredKeys) &&
+        data.id == reportId &&
+        data.labId == labId &&
+        data.patientId is string && data.patientId.size() > 0 && data.patientId.size() <= 50 &&
+        data.testId is string && data.testId.size() > 0 && data.testId.size() <= 50 &&
+        data.parametersData is map &&
+        isValidOptionalStr(data, 'billNo', 50) &&
+        isValidOptionalStr(data, 'testName', 150) &&
+        isValidOptionalStr(data, 'category', 100) &&
+        isValidOptionalStr(data, 'remarks', 500) &&
+        isValidOptionalStr(data, 'status', 50) &&
+        isValidOptionalStr(data, 'technologist', 100) &&
+        isValidOptionalStr(data, 'pathologist', 100);
+    }
+
+    function isValidDoctor(data, labId, doctorId) {
+      let allowedKeys = [
+        'id', 'labId', 'name', 'degree', 'hospital',
+        'phone', 'commissionRate', 'createdAt'
+      ];
+      let requiredKeys = ['id', 'labId', 'name', 'commissionRate'];
+
+      return data.keys().hasOnly(allowedKeys) &&
+        data.keys().hasAll(requiredKeys) &&
+        data.id == doctorId &&
+        data.labId == labId &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
+        data.commissionRate is number && data.commissionRate >= 0 && data.commissionRate <= 100 &&
+        isValidOptionalStr(data, 'degree', 100) &&
+        isValidOptionalStr(data, 'hospital', 150) &&
+        isValidOptionalStr(data, 'phone', 30);
+    }
+
+    function isValidTest(data, labId, testId) {
+      let allowedKeys = [
+        'id', 'labId', 'code', 'name', 'category',
+        'price', 'parameters', 'createdAt'
+      ];
+      let requiredKeys = ['id', 'labId', 'name', 'price'];
+
+      return data.keys().hasOnly(allowedKeys) &&
+        data.keys().hasAll(requiredKeys) &&
+        data.id == testId &&
+        data.labId == labId &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
+        data.price is number && data.price >= 0 &&
+        isValidOptionalStr(data, 'code', 50) &&
+        isValidOptionalStr(data, 'category', 100) &&
+        (!('parameters' in data) || (data.parameters is list && data.parameters.size() <= 100));
+    }
+
+    function isValidStaffSubdoc(data, labId, staffUserId) {
+      let allowedKeys = [
+        'id', 'uid', 'labId', 'name', 'email', 'phone', 'username',
+        'role', 'permissions', 'pin', 'pinHash', 'isActivated',
+        'active', 'createdAt', 'activatedAt'
+      ];
+      let requiredKeys = ['id', 'labId', 'name', 'email', 'role'];
+
+      return data.keys().hasOnly(allowedKeys) &&
+        data.keys().hasAll(requiredKeys) &&
+        data.id == staffUserId &&
+        data.labId == labId &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+        isValidEmail(data.email) &&
+        (data.role == 'admin' || data.role == 'staff') &&
+        isValidOptionalStr(data, 'uid', 128) &&
+        isValidOptionalStr(data, 'phone', 30) &&
+        isValidOptionalStr(data, 'username', 50) &&
+        isValidOptionalStr(data, 'pin', 20) &&
+        isValidOptionalStr(data, 'pinHash', 128) &&
+        (!('permissions' in data) || (data.permissions is map && data.permissions.size() <= 20)) &&
+        (!('isActivated' in data) || data.isActivated is bool) &&
+        (!('active' in data) || data.active is bool);
+    }
+
+    function isValidBackup(data, labId, backupId) {
+      let allowedKeys = ['labId', 'exportedAt', 'counts', 'snapshotJson'];
+      let requiredKeys = ['labId', 'snapshotJson'];
+
+      return data.keys().hasOnly(allowedKeys) &&
+        data.keys().hasAll(requiredKeys) &&
+        data.labId == labId &&
+        data.snapshotJson is string && data.snapshotJson.size() <= 1048576 &&
+        (!('counts' in data) || (data.counts is map && data.counts.size() <= 20));
+    }
+
+    // ===============================================================
+    // Root Collection: _system_health
+    // ===============================================================
+
+    match /_system_health/{docId} {
+      // Diagnostic connectivity ping for connection verification
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() &&
+        docId == 'ping' &&
+        request.resource.data.keys().hasOnly(['lastPing']) &&
+        request.resource.data.lastPing is string &&
+        request.resource.data.lastPing.size() <= 50;
+    }
+
+    // ===============================================================
+    // Root Collection: staff_invites
+    // ===============================================================
+
+    match /staff_invites/{email} {
+      // Invitee can read their own invite during registration
+      // Lab Admin can read invites belonging to their lab
+      allow read: if isAuthenticated() && (
+        (request.auth.token.email != null && request.auth.token.email.lower() == email.lower()) ||
+        (request.auth.token.email != null && resource.data.email.lower() == request.auth.token.email.lower()) ||
+        isLabAdmin(resource.data.labId)
+      );
+
+      // Lab Admin initiates invite for new staff
+      allow create: if isAuthenticated() &&
+        isLabAdmin(request.resource.data.labId) &&
+        isValidStaffInvite(request.resource.data, email) &&
+        request.resource.data.status == 'pending';
+
+      // Updates:
+      // 1. Lab Admin updates invite details or permissions
+      // 2. Staff user marks invite as activated during registration
+      allow update: if isAuthenticated() &&
+        isValidStaffInvite(request.resource.data, email) &&
+        areImmutableFieldsUnchanged(['email', 'labId']) &&
+        (
+          isLabAdmin(resource.data.labId) ||
+          (
+            request.auth.token.email != null &&
+            request.auth.token.email.lower() == email.lower() &&
+            request.resource.data.status == 'activated' &&
+            request.resource.data.activatedUid == request.auth.uid &&
+            areImmutableFieldsUnchanged(['permissions', 'adminEmail', 'invitedAt'])
+          )
+        );
+
+      // Only Lab Admin can delete staff invites
+      allow delete: if isAuthenticated() && isLabAdmin(resource.data.labId);
+    }
+
+    // ===============================================================
+    // Root Collection: users
+    // ===============================================================
+
+    match /users/{userId} {
+      // User can read their own profile document
+      // Lab Admin can read staff profiles belonging to their lab
+      allow read: if isAuthenticated() && (
+        request.auth.uid == userId ||
+        (isLabAdmin(resource.data.labId) && resource.data.role == 'staff')
+      );
+
+      // Create: Authenticated user creating their own document.
+      // Strict role-based protection prevents privilege self-escalation:
+      // - Admin role requires owning the created lab document.
+      // - Staff role requires a valid pre-registered staff invite or existing Lab Admin creation.
+      allow create: if isAuthenticated() &&
+        request.auth.uid == userId &&
+        isValidUser(request.resource.data, userId) &&
+        (
+          (
+            request.resource.data.role == 'admin' &&
+            labDocExists(request.resource.data.labId) &&
+            getLabDoc(request.resource.data.labId).adminUid == userId
+          ) ||
+          (
+            request.resource.data.role == 'staff' &&
+            exists(/databases/$(database)/documents/staff_invites/$(request.resource.data.email.lower())) &&
+            get(/databases/$(database)/documents/staff_invites/$(request.resource.data.email.lower())).data.labId == request.resource.data.labId
+          ) ||
+          (
+            request.resource.data.role == 'staff' &&
+            isLabAdmin(request.resource.data.labId)
+          )
+        );
+
+      // Update:
+      // - Non-admin user can update their own profile, but CANNOT change role, permissions, labId, uid, or createdAt.
+      // - Lab Admin can update staff accounts in their lab (excluding immutable uid, labId, createdAt).
+      allow update: if isAuthenticated() &&
+        isValidUser(request.resource.data, userId) &&
+        areImmutableFieldsUnchanged(['uid', 'createdAt']) &&
+        (
+          (
+            request.auth.uid == userId &&
+            areImmutableFieldsUnchanged(['role', 'permissions', 'labId'])
+          ) ||
+          (
+            isLabAdmin(resource.data.labId) &&
+            resource.data.role == 'staff' &&
+            areImmutableFieldsUnchanged(['labId', 'role'])
+          )
+        );
+
+      // Delete:
+      // Only Lab Admin can delete staff profiles in their lab (self deletion is prohibited).
+      allow delete: if isAuthenticated() &&
+        isLabAdmin(resource.data.labId) &&
+        resource.data.role == 'staff' &&
+        request.auth.uid != userId;
+    }
+
+    // ===============================================================
+    // Root Collection: labs & Multi-Tenant Subcollections
+    // ===============================================================
+
+    match /labs/{labId} {
+      // Lab Profile Read:
+      // Members of the lab, lab owner, or invited staff checking their assigned lab.
+      allow read: if isAuthenticated() && (
+        isLabMember(labId) ||
+        resource.data.adminUid == request.auth.uid ||
+        (
+          request.auth.token.email != null &&
+          exists(/databases/$(database)/documents/staff_invites/$(request.auth.token.email.lower())) &&
+          get(/databases/$(database)/documents/staff_invites/$(request.auth.token.email.lower())).data.labId == labId
+        )
+      );
+
+      // Multi-Admin Lab Registration:
+      // Authenticated user creates a new lab and registers themselves as the primary admin.
+      allow create: if isAuthenticated() &&
+        request.resource.data.adminUid == request.auth.uid &&
+        isValidLab(request.resource.data, labId);
+
+      // Lab Profile Update:
+      // Authorized lab members (admin and sync operations).
+      // Critical ownership fields (adminUid, adminEmail, id, createdAt) are strictly immutable.
+      allow update: if isAuthenticated() &&
+        isLabMember(labId) &&
+        isValidLab(request.resource.data, labId) &&
+        areImmutableFieldsUnchanged(['id', 'adminUid', 'adminEmail', 'createdAt']);
+
+      // Lab Profile Delete:
+      // Only the primary Lab Admin can delete the lab document.
+      allow delete: if isAuthenticated() && resource.data.adminUid == request.auth.uid;
+
+      // -------------------------------------------------------------
+      // Subcollection: patients
+      // -------------------------------------------------------------
+      match /patients/{patientId} {
+        allow read: if isLabMember(labId);
+
+        allow create: if isLabMember(labId) &&
+          isValidPatient(request.resource.data, labId, patientId);
+
+        allow update: if isLabMember(labId) &&
+          isValidPatient(request.resource.data, labId, patientId) &&
+          areImmutableFieldsUnchanged(['id', 'labId', 'uhid', 'billNo']);
+
+        allow delete: if isLabAdmin(labId);
+      }
+
+      // -------------------------------------------------------------
+      // Subcollection: reports
+      // -------------------------------------------------------------
+      match /reports/{reportId} {
+        allow read: if isLabMember(labId);
+
+        allow create: if isLabMember(labId) &&
+          isValidReport(request.resource.data, labId, reportId);
+
+        allow update: if isLabMember(labId) &&
+          isValidReport(request.resource.data, labId, reportId) &&
+          areImmutableFieldsUnchanged(['id', 'labId', 'patientId', 'testId']);
+
+        allow delete: if isLabAdmin(labId);
+      }
+
+      // -------------------------------------------------------------
+      // Subcollection: doctors
+      // -------------------------------------------------------------
+      match /doctors/{doctorId} {
+        allow read: if isLabMember(labId);
+
+        allow create: if isLabMember(labId) &&
+          isValidDoctor(request.resource.data, labId, doctorId);
+
+        allow update: if isLabMember(labId) &&
+          isValidDoctor(request.resource.data, labId, doctorId) &&
+          areImmutableFieldsUnchanged(['id', 'labId']) &&
+          (
+            isLabAdmin(labId) ||
+            (userDocExists() && getUserProfile().permissions.get('canEditDoctor', false) == true)
+          );
+
+        allow delete: if isLabMember(labId) &&
+          (
+            isLabAdmin(labId) ||
+            (userDocExists() && getUserProfile().permissions.get('canDeleteDoctor', false) == true)
+          );
+      }
+
+      // -------------------------------------------------------------
+      // Subcollection: test_catalog
+      // -------------------------------------------------------------
+      match /test_catalog/{testId} {
+        allow read: if isLabMember(labId);
+
+        allow create: if isLabMember(labId) &&
+          isValidTest(request.resource.data, labId, testId);
+
+        allow update: if isLabMember(labId) &&
+          isValidTest(request.resource.data, labId, testId) &&
+          areImmutableFieldsUnchanged(['id', 'labId']) &&
+          (
+            isLabAdmin(labId) ||
+            (
+              userDocExists() && (
+                getUserProfile().permissions.get('canEditTest', false) == true ||
+                (
+                  getUserProfile().permissions.get('canChangeTestRate', false) == true &&
+                  request.resource.data.diff(resource.data).affectedKeys().hasOnly(['price'])
+                )
+              )
+            )
+          );
+
+        allow delete: if isLabMember(labId) &&
+          (
+            isLabAdmin(labId) ||
+            (userDocExists() && getUserProfile().permissions.get('canDeleteTest', false) == true)
+          );
+      }
+
+      // -------------------------------------------------------------
+      // Subcollection: staff (synced lab user directory)
+      // -------------------------------------------------------------
+      match /staff/{staffUserId} {
+        allow read: if isLabMember(labId);
+
+        allow create: if isLabMember(labId) &&
+          isValidStaffSubdoc(request.resource.data, labId, staffUserId);
+
+        allow update: if isLabMember(labId) &&
+          isValidStaffSubdoc(request.resource.data, labId, staffUserId) &&
+          areImmutableFieldsUnchanged(['id', 'labId']);
+
+        allow delete: if isLabAdmin(labId);
+      }
+
+      // -------------------------------------------------------------
+      // Subcollection: backups (cloud recovery snapshots)
+      // -------------------------------------------------------------
+      match /backups/{backupId} {
+        allow read: if isLabMember(labId);
+
+        allow create, update: if isLabMember(labId) &&
+          isValidBackup(request.resource.data, labId, backupId);
+
+        allow delete: if isLabAdmin(labId);
+      }
+    }
+  }
+}

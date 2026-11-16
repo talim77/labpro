@@ -1,19 +1,28 @@
 /**
- * Offline Lab Management System - Auth & Permissions Manager
- * Persistent across multiple HTML pages via localStorage.
- * Auto-seeds default Lab Profile and Admin if empty, so the system is immediately ready to use.
+ * Offline-First Pathology Lab Management System - Auth & Permissions Manager
+ * Dual Mode:
+ * 1. Firebase Authentication & Cloud Firestore (Multi-Admin & Pre-registered Staff)
+ * 2. 100% Offline IndexedDB + PIN Fallback
  */
 
 class AuthManager {
   constructor() {
     this.currentLab = null;
     this.currentUser = null;
+    this.firebaseAuth = null;
+    this.firestore = null;
   }
 
   async init() {
     await window.labDB.init();
 
-    // Check if any lab exists
+    // Check if Firebase is available
+    if (window.firebaseConfigManager && window.firebaseConfigManager.isInitialized) {
+      this.firebaseAuth = window.firebaseConfigManager.auth;
+      this.firestore = window.firebaseConfigManager.db;
+    }
+
+    // Check if any lab exists locally
     let labs = await window.labDB.getAll('lab_profiles');
     
     // Auto-seed default Lab Profile if empty
@@ -40,6 +49,7 @@ class AuthManager {
         labId: 'lab_default',
         name: 'Dr. S. K. Gupta (Admin)',
         username: 'admin',
+        email: 'citylab@example.com',
         pin: '1234',
         pinHash: await this.hashPin('1234'),
         phone: '9876543210',
@@ -103,73 +113,7 @@ class AuthManager {
     return { needsLabSetup: false, currentLab: this.currentLab, currentUser: this.currentUser };
   }
 
-  // Create a new Lab Profile and its Admin
-  async createLabAccount(labData, adminData) {
-    const labId = 'lab_' + Math.random().toString(36).substr(2, 9);
-    const newLab = {
-      id: labId,
-      name: labData.name,
-      tagline: labData.tagline || 'Clinical Pathology & Diagnostic Centre',
-      address: labData.address || '',
-      phone: labData.phone || '',
-      email: labData.email || '',
-      regNo: labData.regNo || '',
-      technologistName: labData.technologistName || 'Lab Technician (DMLT)',
-      pathologistName: labData.pathologistName || 'Consultant Pathologist (MD)',
-      letterheadTopMargin: labData.letterheadTopMargin || 50,
-      logoBase64: labData.logoBase64 || '',
-      createdAt: new Date().toISOString()
-    };
-
-    await window.labDB.add('lab_profiles', newLab);
-
-    // Create Admin User
-    const adminId = 'usr_' + Math.random().toString(36).substr(2, 9);
-    const adminUser = {
-      id: adminId,
-      labId: labId,
-      name: adminData.name || 'Lab Admin',
-      username: adminData.username.toLowerCase().trim(),
-      pin: adminData.pin.trim(),
-      pinHash: await this.hashPin(adminData.pin.trim()),
-      role: 'admin',
-      isActivated: true,
-      permissions: {
-        canChangeTestRate: true,
-        canEditTest: true,
-        canDeleteTest: true,
-        canEditDoctor: true,
-        canDeleteDoctor: true
-      },
-      active: true,
-      createdAt: new Date().toISOString()
-    };
-
-    await window.labDB.add('users', adminUser);
-    await window.testCatalogManager.ensureDefaultTests(labId);
-
-    this.currentLab = newLab;
-    this.currentUser = adminUser;
-    localStorage.setItem('active_lab_id', labId);
-    localStorage.setItem('active_user_' + labId, JSON.stringify(adminUser));
-
-    return { lab: newLab, user: adminUser };
-  }
-
-  // Switch to another lab
-  async switchLab(labId) {
-    const lab = await window.labDB.get('lab_profiles', labId);
-    if (!lab) return false;
-
-    this.currentLab = lab;
-    localStorage.setItem('active_lab_id', labId);
-    this.currentUser = null;
-    localStorage.removeItem('active_user_' + labId);
-    await window.testCatalogManager.ensureDefaultTests(labId);
-    return true;
-  }
-
-  // Cryptographic SHA-256 hash helper with pure JS fallback (100% offline & local origin safe)
+  // Cryptographic SHA-256 hash helper with pure JS fallback
   async hashPin(pin) {
     if (!pin) return '';
     const pinStr = String(pin).trim();
@@ -180,10 +124,8 @@ class AuthManager {
         const hashArray = Array.from(new Uint8Array(hashBuffer));
         return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
       }
-    } catch (e) {
-      // In case crypto.subtle is unavailable in some restricted environments
-    }
-    // High-dispersion pure-JS 32-bit hash fallback
+    } catch (e) {}
+    // Pure-JS 32-bit hash fallback
     let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
     const str = pinStr + '_lab_secret_salt_2026';
     for (let i = 0; i < str.length; i++) {
@@ -196,7 +138,441 @@ class AuthManager {
     return 'h_' + (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16);
   }
 
-  // Login (Supports Username or Mobile Phone number + 4-digit PIN)
+  // --------------------------------------------------------------------------
+  // 1. MULTI-ADMIN LAB REGISTRATION (FIREBASE AUTH & FIRESTORE)
+  // --------------------------------------------------------------------------
+  async registerLabAdminWithFirebase({ labName, tagline, address, phone, email, adminName, adminEmail, password, pin }) {
+    const cleanAdminEmail = (adminEmail || '').toLowerCase().trim();
+    const cleanLabName = (labName || '').trim();
+    const cleanAdminName = (adminName || 'Admin').trim();
+    const cleanPin = (pin || '1234').trim();
+
+    if (!cleanLabName) throw new Error('Lab Name bharna anivarya hai.');
+    if (!cleanAdminEmail) throw new Error('Admin Email (Gmail) bharna zaroori hai.');
+    if (!password || password.length < 6) throw new Error('Password kam se kam 6 characters ka hona chahiye.');
+
+    let firebaseUser = null;
+    const labId = 'lab_' + Math.random().toString(36).substr(2, 9);
+    const now = new Date().toISOString();
+
+    // Check if Firebase is available and online
+    const isOnline = navigator.onLine;
+    const isFirebaseReady = window.firebaseConfigManager && window.firebaseConfigManager.isInitialized;
+
+    if (isOnline && isFirebaseReady) {
+      try {
+        const auth = window.firebaseConfigManager.auth;
+        const db = window.firebaseConfigManager.db;
+
+        // Create Firebase Auth User
+        const userCred = await auth.createUserWithEmailAndPassword(cleanAdminEmail, password);
+        firebaseUser = userCred.user;
+
+        // Save Lab Profile in Firestore
+        await db.collection('labs').doc(labId).set({
+          id: labId,
+          name: cleanLabName,
+          tagline: tagline || 'Clinical Pathology & Diagnostic Centre',
+          address: address || '',
+          phone: phone || '',
+          email: email || cleanAdminEmail,
+          regNo: '',
+          adminUid: firebaseUser.uid,
+          adminEmail: cleanAdminEmail,
+          createdAt: now,
+          updatedAt: now
+        });
+
+        // Save Admin Profile in Firestore
+        await db.collection('users').doc(firebaseUser.uid).set({
+          uid: firebaseUser.uid,
+          id: 'usr_' + firebaseUser.uid.substr(0, 8),
+          labId: labId,
+          labName: cleanLabName,
+          name: cleanAdminName,
+          email: cleanAdminEmail,
+          role: 'admin',
+          pin: cleanPin,
+          pinHash: await this.hashPin(cleanPin),
+          isActivated: true,
+          active: true,
+          permissions: {
+            canChangeTestRate: true,
+            canEditTest: true,
+            canDeleteTest: true,
+            canEditDoctor: true,
+            canDeleteDoctor: true
+          },
+          createdAt: now
+        });
+
+        console.log('[Auth] Admin & Lab created in Firebase successfully:', cleanAdminEmail, labId);
+      } catch (fbErr) {
+        console.warn('[Firebase Auth Register Warning]:', fbErr.message);
+        // If already exists in Auth, attempt sign-in or raise specific message
+        if (fbErr.code === 'auth/email-already-in-use') {
+          throw new Error(`Yeh Email (${cleanAdminEmail}) pehle se registered hai. Kripya login karein ya koi dusra email use karein.`);
+        }
+        throw new Error('Firebase Registration Error: ' + fbErr.message);
+      }
+    }
+
+    // 2. Save in local IndexedDB (Guarantees 100% offline access)
+    const newLab = {
+      id: labId,
+      name: cleanLabName,
+      tagline: tagline || 'Clinical Pathology & Diagnostic Centre',
+      address: address || '',
+      phone: phone || '',
+      email: email || cleanAdminEmail,
+      regNo: '',
+      technologistName: 'Lab Technician (DMLT)',
+      pathologistName: 'Consultant Pathologist (MD)',
+      letterheadTopMargin: 50,
+      logoBase64: '',
+      adminEmail: cleanAdminEmail,
+      createdAt: now
+    };
+    await window.labDB.add('lab_profiles', newLab);
+
+    const adminUser = {
+      id: firebaseUser ? 'usr_' + firebaseUser.uid.substr(0, 8) : 'usr_' + Math.random().toString(36).substr(2, 9),
+      uid: firebaseUser ? firebaseUser.uid : null,
+      labId: labId,
+      name: cleanAdminName,
+      email: cleanAdminEmail,
+      username: cleanAdminEmail.split('@')[0],
+      pin: cleanPin,
+      pinHash: await this.hashPin(cleanPin),
+      role: 'admin',
+      isActivated: true,
+      permissions: {
+        canChangeTestRate: true,
+        canEditTest: true,
+        canDeleteTest: true,
+        canEditDoctor: true,
+        canDeleteDoctor: true
+      },
+      active: true,
+      createdAt: now
+    };
+    await window.labDB.add('users', adminUser);
+    await window.testCatalogManager.ensureDefaultTests(labId);
+
+    // Set active session
+    this.currentLab = newLab;
+    this.currentUser = adminUser;
+    localStorage.setItem('active_lab_id', labId);
+    localStorage.setItem('active_user_' + labId, JSON.stringify(adminUser));
+
+    // Trigger local & cloud backup
+    if (window.cloudSyncManager) {
+      window.cloudSyncManager.scheduleCloudSync();
+    }
+
+    return { lab: newLab, user: adminUser };
+  }
+
+  // --------------------------------------------------------------------------
+  // 2. STAFF ACCOUNT CREATION WITH STRICT ADMIN PRE-REGISTRATION CHECK
+  // --------------------------------------------------------------------------
+  /**
+   * Staff registers their account with their Gmail.
+   * Requirement: Staff can ONLY register if Admin has already saved their email in the database!
+   */
+  async registerStaffWithFirebase({ email, password, name, pin }) {
+    const cleanEmail = (email || '').toLowerCase().trim();
+    if (!cleanEmail) throw new Error('Staff Email (Gmail) bharna zaroori hai.');
+    if (!password || password.length < 6) throw new Error('Password kam se kam 6 characters ka hona chahiye.');
+
+    const isOnline = navigator.onLine;
+    const isFirebaseReady = window.firebaseConfigManager && window.firebaseConfigManager.isInitialized;
+    const db = isFirebaseReady ? window.firebaseConfigManager.db : null;
+
+    let inviteRecord = null;
+
+    // STEP A: VERIFY EMAIL IN CLOUD FIRESTORE / LOCAL DB
+    if (isOnline && db) {
+      // Query 'staff_invites' in Firestore
+      const inviteDoc = await db.collection('staff_invites').doc(cleanEmail).get();
+      if (inviteDoc.exists) {
+        inviteRecord = inviteDoc.data();
+      } else {
+        // Fallback: check query in case document ID is not email
+        const snapshot = await db.collection('staff_invites').where('email', '==', cleanEmail).get();
+        if (!snapshot.empty) {
+          inviteRecord = snapshot.docs[0].data();
+        }
+      }
+    }
+
+    // Fallback: Check local IndexedDB users for pre-registered staff email
+    if (!inviteRecord) {
+      const allUsers = await window.labDB.getAll('users');
+      const localStaff = allUsers.find(u => u.role === 'staff' && u.email && u.email.toLowerCase() === cleanEmail);
+      if (localStaff) {
+        const lab = await window.labDB.get('lab_profiles', localStaff.labId);
+        inviteRecord = {
+          email: cleanEmail,
+          labId: localStaff.labId,
+          labName: lab ? lab.name : 'Unknown Lab',
+          name: localStaff.name,
+          phone: localStaff.phone,
+          permissions: localStaff.permissions || {},
+          localUserId: localStaff.id
+        };
+      }
+    }
+
+    // STRICT CHECK: IF NOT INVITED BY ANY ADMIN -> BLOCK CREATION!
+    if (!inviteRecord) {
+      throw new Error(
+        `❌ Access Denied: Yeh Email (${cleanEmail}) kisi bhi Lab me Admin dwara add nahi kiya gaya hai!\n\n` +
+        `Kripya pehle apne Lab Admin se kahein ki wo aapko "Staff Accounts" menu me jakar is email se add karein.`
+      );
+    }
+
+    const labId = inviteRecord.labId;
+    const labName = inviteRecord.labName || 'Assigned Lab';
+    const now = new Date().toISOString();
+    const cleanPin = (pin || '1234').trim();
+    let firebaseUser = null;
+
+    // STEP B: CREATE FIREBASE AUTH ACCOUNT (IF ONLINE)
+    if (isOnline && isFirebaseReady) {
+      const auth = window.firebaseConfigManager.auth;
+      try {
+        const userCred = await auth.createUserWithEmailAndPassword(cleanEmail, password);
+        firebaseUser = userCred.user;
+      } catch (authErr) {
+        if (authErr.code === 'auth/email-already-in-use') {
+          // If already created in Auth, attempt login
+          const signinCred = await auth.signInWithEmailAndPassword(cleanEmail, password);
+          firebaseUser = signinCred.user;
+        } else {
+          throw new Error('Firebase Auth error: ' + authErr.message);
+        }
+      }
+
+      // Update Firestore 'users' collection
+      await db.collection('users').doc(firebaseUser.uid).set({
+        uid: firebaseUser.uid,
+        email: cleanEmail,
+        name: name || inviteRecord.name || 'Staff Member',
+        phone: inviteRecord.phone || '',
+        role: 'staff',
+        labId: labId,
+        labName: labName,
+        permissions: inviteRecord.permissions || {},
+        pin: cleanPin,
+        pinHash: await this.hashPin(cleanPin),
+        isActivated: true,
+        active: true,
+        createdAt: now,
+        activatedAt: now
+      }, { merge: true });
+
+      // Mark invite as activated
+      await db.collection('staff_invites').doc(cleanEmail).set({
+        status: 'activated',
+        activatedUid: firebaseUser.uid,
+        activatedAt: now
+      }, { merge: true });
+    }
+
+    // STEP C: UPDATE / SAVE IN LOCAL INDEXEDDB
+    // 1. Ensure Lab Profile exists locally
+    let lab = await window.labDB.get('lab_profiles', labId);
+    if (!lab && isOnline && db) {
+      const labDoc = await db.collection('labs').doc(labId).get();
+      if (labDoc.exists) {
+        lab = labDoc.data();
+        await window.labDB.put('lab_profiles', lab);
+      }
+    }
+
+    if (!lab) {
+      lab = {
+        id: labId,
+        name: labName,
+        createdAt: now
+      };
+      await window.labDB.put('lab_profiles', lab);
+    }
+
+    // 2. Save/Update user in local IndexedDB
+    const staffId = inviteRecord.localUserId || (firebaseUser ? 'usr_' + firebaseUser.uid.substr(0, 8) : 'usr_' + Math.random().toString(36).substr(2, 9));
+    const localUser = {
+      id: staffId,
+      uid: firebaseUser ? firebaseUser.uid : null,
+      labId: labId,
+      name: name || inviteRecord.name || 'Staff Member',
+      email: cleanEmail,
+      username: cleanEmail.split('@')[0],
+      phone: inviteRecord.phone || '',
+      pin: cleanPin,
+      pinHash: await this.hashPin(cleanPin),
+      role: 'staff',
+      permissions: inviteRecord.permissions || {},
+      isActivated: true,
+      active: true,
+      createdAt: now,
+      activatedAt: now
+    };
+    await window.labDB.put('users', localUser);
+    await window.testCatalogManager.ensureDefaultTests(labId);
+
+    // STEP D: SET ACTIVE SESSION & SWITCH TO LAB
+    this.currentLab = lab;
+    this.currentUser = localUser;
+    localStorage.setItem('active_lab_id', labId);
+    localStorage.setItem('active_user_' + labId, JSON.stringify(localUser));
+
+    if (window.cloudSyncManager) {
+      window.cloudSyncManager.scheduleCloudSync();
+    }
+
+    return { success: true, user: localUser, lab: lab };
+  }
+
+  // --------------------------------------------------------------------------
+  // 3. ADMIN PRE-REGISTERS STAFF (SAVES EMAIL IN DATABASE FOR LATER SIGNUP)
+  // --------------------------------------------------------------------------
+  async createStaff(staffData) {
+    if (!this.isAdmin()) throw new Error('Staff add karne ka adhikar sirf Admin ke paas hai.');
+
+    const name = (staffData.name || '').trim();
+    const email = (staffData.email || '').toLowerCase().trim();
+    const phone = (staffData.phone || '').trim();
+
+    if (!name) throw new Error('Staff Member Name bharna zaroori hai.');
+    if (!email) throw new Error('Staff Email (Gmail) bharna zaroori hai taaki staff apna account create kar sake.');
+
+    const staffId = 'usr_' + Math.random().toString(36).substr(2, 9);
+    const now = new Date().toISOString();
+    
+    // Explicit Staff Permissions
+    const permissions = {
+      canChangeTestRate: !!(staffData.permissions?.canChangeTestRate || staffData.canChangeTestRate),
+      canEditTest: !!(staffData.permissions?.canEditTest || staffData.canEditTest),
+      canDeleteTest: !!(staffData.permissions?.canDeleteTest || staffData.canDeleteTest),
+      canEditDoctor: !!(staffData.permissions?.canEditDoctor || staffData.canEditDoctor),
+      canDeleteDoctor: !!(staffData.permissions?.canDeleteDoctor || staffData.canDeleteDoctor)
+    };
+
+    const newStaff = {
+      id: staffId,
+      labId: this.currentLab.id,
+      name: name,
+      email: email,
+      phone: phone,
+      username: email.split('@')[0],
+      pinHash: '',
+      role: 'staff',
+      permissions: permissions,
+      isActivated: false,
+      active: true,
+      createdAt: now
+    };
+
+    // 1. Save locally in IndexedDB
+    await window.labDB.add('users', newStaff);
+
+    // 2. Save in Cloud Firestore 'staff_invites' (so staff can sign up online)
+    const isOnline = navigator.onLine;
+    const isFirebaseReady = window.firebaseConfigManager && window.firebaseConfigManager.isInitialized;
+    if (isOnline && isFirebaseReady) {
+      try {
+        const db = window.firebaseConfigManager.db;
+        await db.collection('staff_invites').doc(email).set({
+          email: email,
+          name: name,
+          phone: phone,
+          labId: this.currentLab.id,
+          labName: this.currentLab.name,
+          adminEmail: this.currentUser?.email || 'admin',
+          permissions: permissions,
+          status: 'pending',
+          invitedAt: now
+        });
+        console.log(`[Auth] Staff invite registered in Firestore for ${email} under Lab ${this.currentLab.id}`);
+      } catch (fbErr) {
+        console.warn('[Firestore staff_invites write error]:', fbErr.message);
+      }
+    }
+
+    if (window.cloudSyncManager) {
+      window.cloudSyncManager.scheduleCloudSync();
+    }
+
+    return newStaff;
+  }
+
+  // --------------------------------------------------------------------------
+  // 4. UNIFIED LOGIN (FIREBASE AUTH CLOUD LOGIN + OFFLINE PIN LOGIN)
+  // --------------------------------------------------------------------------
+  /**
+   * Cloud Login via Email and Password
+   */
+  async loginWithEmail(email, password) {
+    const cleanEmail = (email || '').toLowerCase().trim();
+    if (!cleanEmail || !password) {
+      return { success: false, message: 'Email aur Password dono enter karein.' };
+    }
+
+    const isOnline = navigator.onLine;
+    const isFirebaseReady = window.firebaseConfigManager && window.firebaseConfigManager.isInitialized;
+
+    if (isOnline && isFirebaseReady) {
+      try {
+        const auth = window.firebaseConfigManager.auth;
+        const db = window.firebaseConfigManager.db;
+
+        // Firebase Auth Sign In
+        const userCred = await auth.signInWithEmailAndPassword(cleanEmail, password);
+        const fbUser = userCred.user;
+
+        // Fetch user document from Firestore
+        const userDoc = await db.collection('users').doc(fbUser.uid).get();
+        if (!userDoc.exists) {
+          return { success: false, message: 'User profile Firestore database me nahi mila.' };
+        }
+
+        const userData = userDoc.data();
+        const labId = userData.labId;
+
+        // Fetch Lab Profile
+        const labDoc = await db.collection('labs').doc(labId).get();
+        const labData = labDoc.exists ? labDoc.data() : { id: labId, name: userData.labName || 'Lab' };
+
+        // Save into local IndexedDB for future offline usage
+        await window.labDB.put('lab_profiles', labData);
+        await window.labDB.put('users', userData);
+        await window.testCatalogManager.ensureDefaultTests(labId);
+
+        // Set active session
+        this.currentLab = labData;
+        this.currentUser = userData;
+        localStorage.setItem('active_lab_id', labId);
+        localStorage.setItem('active_user_' + labId, JSON.stringify(userData));
+
+        if (window.cloudSyncManager) {
+          window.cloudSyncManager.scheduleCloudSync();
+        }
+
+        return { success: true, user: userData, lab: labData };
+      } catch (err) {
+        console.warn('[Firebase Login Error]:', err.message);
+        return { success: false, message: 'Cloud Login Error: ' + err.message };
+      }
+    } else {
+      return { success: false, message: 'Internet connection nahi hai. Kripya niche "Offline PIN Login" ka use karein.' };
+    }
+  }
+
+  /**
+   * Offline / Standard PIN Login (Supports Username, Email, or Mobile Phone + PIN)
+   */
   async login(identifier, pin) {
     if (!this.currentLab) return { success: false, message: 'Koi Lab select nahi hai.' };
 
@@ -205,30 +581,34 @@ class AuthManager {
     const cleanPin = String(pin || '').trim();
 
     if (!cleanId || !cleanPin) {
-      return { success: false, message: 'Username/Mobile aur PIN enter karein.' };
+      return { success: false, message: 'Username/Email/Mobile aur PIN enter karein.' };
     }
 
     const users = await window.labDB.getAll('users', u => u.labId === this.currentLab.id && u.active);
     
-    // Find user by username or phone
+    // Find user by username, email or phone
     const user = users.find(u => {
       const uUser = (u.username || '').toLowerCase();
+      const uEmail = (u.email || '').toLowerCase();
       const uPhone = String(u.phone || '').replace(/\D/g, '');
-      return (uUser && uUser === cleanId) || (cleanDigits && uPhone && (uPhone === cleanDigits || uPhone.endsWith(cleanDigits)));
+      return (uUser && uUser === cleanId) ||
+             (uEmail && uEmail === cleanId) ||
+             (cleanDigits && uPhone && (uPhone === cleanDigits || uPhone.endsWith(cleanDigits)));
     });
 
     if (!user) {
-      return { success: false, message: 'User account nahi mila! Username ya Mobile Number dobara check karein.' };
+      return { success: false, message: 'User account nahi mila! Username, Email ya Mobile Number check karein.' };
     }
 
-    // Check if staff has completed first-time activation
+    // Check if staff has completed activation
     if (user.role === 'staff' && user.isActivated === false) {
       return { 
         success: false, 
         needsActivation: true,
         phone: user.phone,
+        email: user.email,
         name: user.name,
-        message: 'Aapka Staff account abhi activate nahi hua hai. Kripya niche "Activate Staff Account" par click karke apna secret PIN banayein.' 
+        message: 'Aapka Staff account abhi activate nahi hua hai. Kripya "Create Staff Account" me jakar sign up karein.' 
       };
     }
 
@@ -238,7 +618,6 @@ class AuthManager {
     if (user.pinHash) {
       isMatch = (user.pinHash === hashedEntered);
     } else if (user.pin) {
-      // Backwards compatibility for existing accounts
       isMatch = (user.pin === cleanPin);
     }
 
@@ -248,7 +627,6 @@ class AuthManager {
 
     this.currentUser = user;
     
-    // Store sanitized user session in localStorage (never expose PIN or pinHash!)
     const safeUser = { ...user };
     delete safeUser.pin;
     delete safeUser.pinHash;
@@ -262,6 +640,28 @@ class AuthManager {
       localStorage.removeItem('active_user_' + this.currentLab.id);
     }
     this.currentUser = null;
+    if (window.firebaseConfigManager && window.firebaseConfigManager.auth) {
+      try {
+        window.firebaseConfigManager.auth.signOut();
+      } catch (e) {}
+    }
+  }
+
+  // Switch to another lab
+  async switchLab(labId) {
+    const lab = await window.labDB.get('lab_profiles', labId);
+    if (!lab) return false;
+
+    this.currentLab = lab;
+    localStorage.setItem('active_lab_id', labId);
+    this.currentUser = null;
+    localStorage.removeItem('active_user_' + labId);
+    await window.testCatalogManager.ensureDefaultTests(labId);
+
+    if (window.cloudSyncManager) {
+      window.cloudSyncManager.updateStatusBadge();
+    }
+    return true;
   }
 
   // Verify Admin PIN for discount override
@@ -274,113 +674,14 @@ class AuthManager {
     return match || null;
   }
 
-  // Step 1: Admin initiates staff onboarding (Name + Mobile + Permissions only)
-  async createStaff(staffData) {
-    if (!this.isAdmin()) throw new Error('Staff add karne ka adhikar sirf Admin ke paas hai.');
-
-    if (!staffData.name || !staffData.name.trim()) {
-      throw new Error('Staff Member Name bharna zaroori hai.');
-    }
-    if (!staffData.phone || !staffData.phone.trim()) {
-      throw new Error('Staff ka Mobile Phone Number bharna zaroori hai.');
-    }
-
-    const staffId = 'usr_' + Math.random().toString(36).substr(2, 9);
-    
-    // Explicit Staff Permissions (Defaults: false)
-    const permissions = {
-      canChangeTestRate: !!(staffData.permissions?.canChangeTestRate || staffData.canChangeTestRate),
-      canEditTest: !!(staffData.permissions?.canEditTest || staffData.canEditTest),
-      canDeleteTest: !!(staffData.permissions?.canDeleteTest || staffData.canDeleteTest),
-      canEditDoctor: !!(staffData.permissions?.canEditDoctor || staffData.canEditDoctor),
-      canDeleteDoctor: !!(staffData.permissions?.canDeleteDoctor || staffData.canDeleteDoctor)
-    };
-
-    const newStaff = {
-      id: staffId,
-      labId: this.currentLab.id,
-      name: staffData.name.trim(),
-      phone: staffData.phone.trim(),
-      username: '',     // To be set by staff during activation
-      pinHash: '',      // To be set privately by staff
-      role: 'staff',
-      permissions: permissions,
-      isActivated: false,
-      active: true,
-      createdAt: new Date().toISOString()
-    };
-
-    await window.labDB.add('users', newStaff);
-    return newStaff;
-  }
-
-  // Step 2 (Staff side): Lookup pending staff profile by mobile number
-  async getPendingStaffByPhone(phone) {
-    if (!this.currentLab) return null;
-    const cleanPhone = String(phone).replace(/\D/g, '');
-    if (!cleanPhone) return null;
-
-    const staffUsers = await window.labDB.getAll('users', u => u.labId === this.currentLab.id && u.role === 'staff' && u.active);
-    
-    // Match by phone number
-    return staffUsers.find(u => {
-      const uPhone = String(u.phone).replace(/\D/g, '');
-      return uPhone && (uPhone === cleanPhone || uPhone.endsWith(cleanPhone) || cleanPhone.endsWith(uPhone));
-    }) || null;
-  }
-
-  // Step 2 (Staff side): Staff activates account, chooses username, and sets secret 4-digit PIN
-  async activateStaffAccount({ staffId, name, phone, username, pin }) {
-    if (!this.currentLab) throw new Error('Lab select nahi hai.');
-    
-    const user = await window.labDB.get('users', staffId);
-    if (!user) throw new Error('Staff invitation record nahi mila. Admin se sampark karein.');
-
-    const cleanUsername = username.toLowerCase().trim();
-    if (!cleanUsername) throw new Error('Login Username chunna anivarya hai.');
-
-    // Ensure username is not already taken by someone else
-    const allUsers = await window.labDB.getAll('users', u => u.labId === this.currentLab.id && u.id !== staffId);
-    if (allUsers.some(u => u.username && u.username.toLowerCase() === cleanUsername)) {
-      throw new Error(`Username "${cleanUsername}" pehle se kisi dusre user ka hai. Kripya koi dusra username chunein.`);
-    }
-
-    // Verify 4-digit PIN
-    const cleanPin = String(pin).trim();
-    if (!/^\d{4}$/.test(cleanPin)) {
-      throw new Error('Security PIN theek 4-digit ka numeric number hona chahiye (jaise: 1122).');
-    }
-
-    const hashed = await this.hashPin(cleanPin);
-
-    user.name = name.trim();
-    user.phone = phone.trim();
-    user.username = cleanUsername;
-    user.pinHash = hashed;
-    delete user.pin; // Plaintext PIN is never stored!
-    user.isActivated = true;
-    user.activatedAt = new Date().toISOString();
-
-    await window.labDB.put('users', user);
-
-    // Auto login
-    this.currentUser = user;
-    const safeUser = { ...user };
-    delete safeUser.pin;
-    delete safeUser.pinHash;
-    localStorage.setItem('active_user_' + this.currentLab.id, JSON.stringify(safeUser));
-
-    return safeUser;
-  }
-
   // Update existing Staff account and granular permissions (Admin only)
-  // Notice: Admin CANNOT view or alter staff's secret PIN!
   async updateStaff(userId, updateData) {
     if (!this.isAdmin()) throw new Error('Staff update karne ka adhikar sirf Admin ke paas hai.');
     const user = await window.labDB.get('users', userId);
     if (!user) throw new Error('Staff account nahi mila.');
 
     if (updateData.name) user.name = updateData.name.trim();
+    if (updateData.email) user.email = updateData.email.toLowerCase().trim();
     if (updateData.phone !== undefined) user.phone = updateData.phone.trim();
 
     if (updateData.permissions) {
@@ -394,6 +695,20 @@ class AuthManager {
     }
 
     await window.labDB.put('users', user);
+
+    // Update in Firestore if online
+    if (navigator.onLine && window.firebaseConfigManager && window.firebaseConfigManager.isInitialized) {
+      try {
+        const db = window.firebaseConfigManager.db;
+        if (user.email) {
+          await db.collection('staff_invites').doc(user.email).set({
+            name: user.name,
+            phone: user.phone,
+            permissions: user.permissions
+          }, { merge: true });
+        }
+      } catch (e) {}
+    }
 
     if (this.currentUser && this.currentUser.id === userId) {
       this.currentUser = user;
@@ -415,6 +730,12 @@ class AuthManager {
     if (this.currentUser && this.currentUser.id === userId) {
       throw new Error('Aap apne khud ke active account ko delete nahi kar sakte.');
     }
+    const user = await window.labDB.get('users', userId);
+    if (user && user.email && navigator.onLine && window.firebaseConfigManager && window.firebaseConfigManager.isInitialized) {
+      try {
+        await window.firebaseConfigManager.db.collection('staff_invites').doc(user.email).delete();
+      } catch (e) {}
+    }
     await window.labDB.delete('users', userId);
     return true;
   }
@@ -427,11 +748,6 @@ class AuthManager {
     return this.currentUser && this.currentUser.role === 'staff';
   }
 
-  /**
-   * Granular permission evaluator:
-   * Admins have universal permission (returns true).
-   * Staff permissions checked against permissions object.
-   */
   hasPermission(permissionKey) {
     if (!this.currentUser) return false;
     if (this.currentUser.role === 'admin') return true;
