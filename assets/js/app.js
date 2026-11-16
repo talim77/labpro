@@ -15,14 +15,6 @@ class AppController {
     // Initialize DB
     await window.labDB.init();
 
-    // Initialize Firebase & Cloud Sync
-    if (window.firebaseConfigManager) {
-      await window.firebaseConfigManager.init();
-    }
-    if (window.cloudSyncManager) {
-      await window.cloudSyncManager.init();
-    }
-
     // Check Auth & Lab Profile
     await window.authManager.init();
 
@@ -79,197 +71,44 @@ class AppController {
         el.style.display = user.role === 'admin' ? '' : 'none';
       });
     }
-
-    // Insert live Cloud Sync status badge in topbar if present
-    const topbarRight = document.querySelector('.topbar-right');
-    if (topbarRight && !topbarRight.querySelector('.ui-cloud-status-badge')) {
-      const badgeContainer = document.createElement('div');
-      badgeContainer.className = 'ui-cloud-status-badge';
-      topbarRight.insertBefore(badgeContainer, topbarRight.firstChild);
-    }
-    if (window.cloudSyncManager) {
-      window.cloudSyncManager.updateStatusBadge();
-    }
   }
 
   // Ensure shared modals exist on every HTML page
   ensureCommonModals() {
-    // 1. Dual-Mode Login Modal (Cloud Firebase + Offline PIN)
+    // 1. Login Modal
     if (!document.getElementById('modal-login')) {
       const modal = document.createElement('div');
       modal.className = 'modal-backdrop';
       modal.id = 'modal-login';
       modal.innerHTML = `
-        <div class="modal-dialog" style="max-width:440px;">
+        <div class="modal-dialog" style="max-width:420px;">
           <div class="modal-header">
             <div>
-              <h3 style="margin:0;">🔬 Lab Account Login</h3>
-              <span style="font-size:11.5px; color:#64748b;">Sign in to your Pathology Lab</span>
+              <h3 style="margin:0;">Lab Login</h3>
+              <span style="font-size:11.5px; color:#64748b;">Sign in with your Username/Mobile & PIN</span>
             </div>
             <button class="modal-close" onclick="window.app.closeModal('modal-login')">&times;</button>
           </div>
-          <div class="modal-body" style="padding:16px 20px;">
-            <!-- Login Tabs -->
-            <div style="display:flex; border-bottom:1px solid #e2e8f0; margin-bottom:16px;">
-              <button id="tab-login-cloud" type="button" class="btn btn-sm" style="flex:1; border:none; border-bottom:2px solid var(--primary); background:transparent; font-weight:700; color:var(--primary); border-radius:0; padding:8px;" onclick="window.app.switchLoginTab('cloud')">
-                ☁️ Cloud Login (Online)
-              </button>
-              <button id="tab-login-offline" type="button" class="btn btn-sm" style="flex:1; border:none; border-bottom:2px solid transparent; background:transparent; font-weight:600; color:#64748b; border-radius:0; padding:8px;" onclick="window.app.switchLoginTab('offline')">
-                💻 Offline PIN Login
-              </button>
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label required">Select Active Account</label>
+              <select id="login-user-select" class="form-control"></select>
             </div>
+            <div class="form-group">
+              <label class="form-label required">4-Digit Security PIN</label>
+              <input type="password" id="login-pin-input" class="form-control" maxlength="6" placeholder="Enter PIN">
+            </div>
+            <button class="btn btn-primary" style="width:100%; margin-top:8px;" onclick="window.app.performLogin()">
+              Login to System
+            </button>
 
-            <!-- Tab 1: Cloud Login (Firebase Email & Password) -->
-            <div id="pane-login-cloud">
-              <div class="form-group">
-                <label class="form-label required">Gmail / Email</label>
-                <input type="email" id="cloud-login-email" class="form-control" placeholder="e.g. admin@gmail.com or staff@gmail.com">
-              </div>
-              <div class="form-group">
-                <label class="form-label required">Password</label>
-                <input type="password" id="cloud-login-password" class="form-control" placeholder="••••••••">
-              </div>
-              <button class="btn btn-primary" style="width:100%; margin-top:8px; font-weight:700;" onclick="window.app.performCloudLogin()">
-                ☁️ Login to Cloud Lab
+            <!-- Two-Step Staff Setup & Activation Trigger -->
+            <div style="margin-top:16px; padding-top:14px; border-top:1px dashed #cbd5e1; text-align:center;">
+              <span style="display:block; font-size:12px; color:#64748b; margin-bottom:6px;">First time here as Staff?</span>
+              <button type="button" class="btn btn-outline btn-sm" style="width:100%; color:#0284c7; border-color:#0284c7; font-weight:600;" onclick="window.app.openStaffActivationModal()">
+                🔑 Activate Staff Account (Set Your Private PIN)
               </button>
             </div>
-
-            <!-- Tab 2: Offline PIN Login -->
-            <div id="pane-login-offline" style="display:none;">
-              <div class="form-group">
-                <label class="form-label required">Select Local User Account</label>
-                <select id="login-user-select" class="form-control"></select>
-              </div>
-              <div class="form-group">
-                <label class="form-label required">4-Digit Security PIN</label>
-                <input type="password" id="login-pin-input" class="form-control" maxlength="6" placeholder="Enter PIN">
-              </div>
-              <button class="btn btn-secondary" style="width:100%; margin-top:8px; font-weight:700;" onclick="window.app.performLogin()">
-                💻 Login Offline (PIN)
-              </button>
-            </div>
-
-            <!-- Account Creation & Registration -->
-            <div style="margin-top:20px; padding-top:14px; border-top:1px dashed #cbd5e1; display:flex; flex-direction:column; gap:8px;">
-              <button type="button" class="btn btn-outline btn-sm" style="width:100%; color:#0284c7; border-color:#0284c7; font-weight:600;" onclick="window.app.openRegisterAdminLabModal()">
-                🏢 + Register New Lab (Admin Account)
-              </button>
-              <button type="button" class="btn btn-outline btn-sm" style="width:100%; color:#16a34a; border-color:#16a34a; font-weight:600;" onclick="window.app.openStaffSignupModal()">
-                👤 + Staff Account Sign Up (Invited Gmail)
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-    }
-
-    // 2. Register New Lab & Admin Modal (Multi-Admin Multi-Lab)
-    if (!document.getElementById('modal-register-admin-lab')) {
-      const modal = document.createElement('div');
-      modal.className = 'modal-backdrop';
-      modal.id = 'modal-register-admin-lab';
-      modal.innerHTML = `
-        <div class="modal-dialog" style="max-width:520px;">
-          <div class="modal-header">
-            <div>
-              <h3 style="margin:0;">🏢 Register Your Lab (Admin)</h3>
-              <span style="font-size:11.5px; color:#64748b;">Multi-Admin: Create your Lab profile and Admin account</span>
-            </div>
-            <button class="modal-close" onclick="window.app.closeModal('modal-register-admin-lab')">&times;</button>
-          </div>
-          <div class="modal-body" style="max-height:78vh; overflow-y:auto;">
-            <div class="form-group">
-              <label class="form-label required">Lab Name</label>
-              <input type="text" id="reg-lab-name" class="form-control" placeholder="e.g. Apex Diagnostics & Pathology" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Lab Tagline / Subtitle</label>
-              <input type="text" id="reg-lab-tagline" class="form-control" placeholder="e.g. Accurate & Computerized Diagnostics">
-            </div>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-              <div class="form-group">
-                <label class="form-label">Lab Address</label>
-                <input type="text" id="reg-lab-address" class="form-control" placeholder="e.g. Station Road, City">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Contact Phone</label>
-                <input type="text" id="reg-lab-phone" class="form-control" placeholder="e.g. 9876543210">
-              </div>
-            </div>
-            <div style="height:1px; background:#e2e8f0; margin:8px 0 14px 0;"></div>
-            <div style="font-weight:700; font-size:13px; color:#0369a1; margin-bottom:10px;">👑 Admin Account Credentials</div>
-            <div class="form-group">
-              <label class="form-label required">Admin Full Name</label>
-              <input type="text" id="reg-admin-name" class="form-control" placeholder="e.g. Dr. R. K. Sharma" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label required">Admin Email / Gmail (For Login)</label>
-              <input type="email" id="reg-admin-email" class="form-control" placeholder="e.g. admin@gmail.com" required>
-            </div>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-              <div class="form-group">
-                <label class="form-label required">Account Password</label>
-                <input type="password" id="reg-admin-password" class="form-control" placeholder="Min 6 characters" required>
-              </div>
-              <div class="form-group">
-                <label class="form-label required">Offline PIN (4 Digits)</label>
-                <input type="password" id="reg-admin-pin" class="form-control" maxlength="4" placeholder="e.g. 1234" value="1234" required>
-              </div>
-            </div>
-            <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; padding:10px; font-size:12px; color:#0369a1; margin-top:8px;">
-              💡 <strong>Multi-Tenant Isolation:</strong> Aapki Lab ko ek alag Lab ID milegi. Aap apne staff ko invite kar sakenge aur aapka data doosre admins se poori tarah alag aur Cloud Firestore me secure rahega.
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="window.app.closeModal('modal-register-admin-lab')">Cancel</button>
-            <button class="btn btn-primary" onclick="window.app.submitRegisterAdminLab()">✓ Register Lab & Admin</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-    }
-
-    // 3. Staff Account Sign Up Modal (Strict Pre-Registered Email Verification)
-    if (!document.getElementById('modal-staff-signup')) {
-      const modal = document.createElement('div');
-      modal.className = 'modal-backdrop';
-      modal.id = 'modal-staff-signup';
-      modal.innerHTML = `
-        <div class="modal-dialog" style="max-width:480px;">
-          <div class="modal-header">
-            <div>
-              <h3 style="margin:0;">👤 Staff Account Sign Up</h3>
-              <span style="font-size:11.5px; color:#64748b;">Sign in with your pre-registered Gmail</span>
-            </div>
-            <button class="modal-close" onclick="window.app.closeModal('modal-staff-signup')">&times;</button>
-          </div>
-          <div class="modal-body" style="max-height:78vh; overflow-y:auto;">
-            <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:10px 12px; margin-bottom:14px; font-size:12px; color:#1e40af;">
-              🔒 <strong>Zaroori Niyam:</strong> Staff sirf usi Gmail/Email se account bana sakta hai jise Admin ne database me pehle se add kiya ho. Isase system automatic pehchan lega ki aapko kis Lab ka access dena hai.
-            </div>
-            <div class="form-group">
-              <label class="form-label required">Your Registered Gmail / Email</label>
-              <input type="email" id="staff-signup-email" class="form-control" placeholder="e.g. rahul@gmail.com" required style="font-weight:600;">
-              <small style="color:#64748b; font-size:11px;">Wahi email enter karein jo aapke Lab Admin ne Staff menu me save kiya hai.</small>
-            </div>
-            <div class="form-group">
-              <label class="form-label required">Create Account Password</label>
-              <input type="password" id="staff-signup-password" class="form-control" placeholder="Min 6 characters" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Your Full Name (Optional if already set by Admin)</label>
-              <input type="text" id="staff-signup-name" class="form-control" placeholder="e.g. Rahul Sharma">
-            </div>
-            <div class="form-group">
-              <label class="form-label required">Create 4-Digit Security PIN (Offline Backup)</label>
-              <input type="password" id="staff-signup-pin" class="form-control" maxlength="4" placeholder="••••" value="1234" required style="font-size:16px; font-weight:700; letter-spacing:2px; text-align:center;">
-              <small style="color:#64748b; font-size:11px;">Agar internet na rahe toh aap is PIN se offline login kar sakenge.</small>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="window.app.closeModal('modal-staff-signup')">Cancel</button>
-            <button class="btn btn-success" onclick="window.app.submitStaffSignup()">✓ Verify Email & Join Lab</button>
           </div>
         </div>
       `;
@@ -1694,21 +1533,19 @@ class AppController {
         permissionsHTML = `<div style="display:flex; gap:4px; flex-wrap:wrap;">${badges.join('')}</div>`;
       }
 
-      const emailCol = s.email ? `<strong style="color:#0284c7;">${s.email}</strong>` : `<span style="color:#94a3b8; font-style:italic;">Not Set</span>`;
-      const usernameCol = s.username ? `@${s.username}` : `<span class="badge badge-neutral" style="font-size:11px;">@${(s.email || '').split('@')[0]}</span>`;
+      const usernameCol = s.username ? `@${s.username}` : `<span class="badge badge-warning" style="font-size:11px;">⏳ Pending Setup</span>`;
       const statusCol = (s.role === 'admin' || s.isActivated)
-        ? `<span class="badge badge-success">✓ Active & Joined</span>`
-        : `<span class="badge badge-warning" style="background:#fef3c7; color:#92400e;" title="Admin has pre-registered this email, waiting for staff signup">⏳ Invited (Pending Signup)</span>`;
+        ? `<span class="badge badge-success">✓ Active</span>`
+        : `<span class="badge badge-warning" style="background:#fef3c7; color:#92400e;">⏳ Pending Activation</span>`;
       const pinCol = (s.role === 'admin')
         ? `<span class="badge badge-neutral" style="font-family:monospace;">${s.pin ? s.pin : '••••'}</span>`
         : (s.isActivated 
-            ? `<span class="badge badge-neutral" style="background:#f1f5f9; color:#475569;" title="Staff PIN is private & encrypted">🔒 Set</span>`
+            ? `<span class="badge badge-neutral" style="background:#f1f5f9; color:#475569;" title="Staff PIN is private & encrypted">🔒 Private</span>`
             : `<span style="font-size:11px; color:#94a3b8; font-style:italic;">Not Set Yet</span>`);
 
       return `
         <tr>
           <td><strong>${s.name}</strong></td>
-          <td>${emailCol}</td>
           <td>${usernameCol}</td>
           <td>${s.phone || '-'}</td>
           <td>${statusCol}</td>
@@ -1730,11 +1567,10 @@ class AppController {
   async saveNewStaffForm() {
     try {
       const name = document.getElementById('staff-name-input')?.value.trim();
-      const email = document.getElementById('staff-email-input')?.value.trim();
       const phone = document.getElementById('staff-phone-input')?.value.trim();
 
-      if (!name || !email) {
-        throw new Error('Staff Name aur Email (Gmail) dono bharna anivarya hai.');
+      if (!name || !phone) {
+        throw new Error('Staff Name aur Mobile Phone Number dono bharna anivarya hai.');
       }
 
       const permissions = {
@@ -1745,10 +1581,10 @@ class AppController {
         canDeleteDoctor: document.getElementById('staff-perm-doc-del')?.checked || false
       };
 
-      await window.authManager.createStaff({ name, email, phone, permissions });
+      await window.authManager.createStaff({ name, phone, permissions });
       this.closeModal('modal-add-staff');
       document.getElementById('form-staff')?.reset();
-      this.showToast('Staff email add ho gaya! Staff ab isi Gmail se account bana sakega.', 'success');
+      this.showToast('Staff onboarding initiate ho gaya! Staff ab login page se activate karke apna private PIN banayega.', 'success');
       this.renderStaffView();
     } catch (err) {
       this.showToast(err.message, 'error');
@@ -1760,11 +1596,8 @@ class AppController {
     if (!staff) return;
 
     document.getElementById('edit-staff-id').value = staff.id;
-    document.getElementById('edit-staff-username-pill').innerText = staff.email || (staff.username ? `@${staff.username}` : '(Pending)');
+    document.getElementById('edit-staff-username-pill').innerText = staff.username ? `@${staff.username}` : '(Pending Activation)';
     document.getElementById('edit-staff-name-input').value = staff.name || '';
-    if (document.getElementById('edit-staff-email-input')) {
-      document.getElementById('edit-staff-email-input').value = staff.email || '';
-    }
     document.getElementById('edit-staff-phone-input').value = staff.phone || '';
 
     const p = staff.permissions || {};
@@ -1781,11 +1614,10 @@ class AppController {
     try {
       const id = document.getElementById('edit-staff-id').value;
       const name = document.getElementById('edit-staff-name-input').value.trim();
-      const email = document.getElementById('edit-staff-email-input')?.value.trim();
       const phone = document.getElementById('edit-staff-phone-input').value.trim();
 
       if (!name) throw new Error('Staff ka name likhna zaroori hai.');
-      if (!email) throw new Error('Staff ka email (Gmail) likhna zaroori hai.');
+      if (!phone) throw new Error('Mobile Phone number bharna zaroori hai.');
 
       const permissions = {
         canChangeTestRate: document.getElementById('edit-perm-test-rate').checked,
@@ -1795,7 +1627,7 @@ class AppController {
         canDeleteDoctor: document.getElementById('edit-perm-doc-del').checked
       };
 
-      const updateData = { name, email, phone, permissions };
+      const updateData = { name, phone, permissions };
       await window.authManager.updateStaff(id, updateData);
       this.closeModal('modal-edit-staff');
       this.showToast('Staff details aur permissions successfully update ho gayi!', 'success');
@@ -1922,33 +1754,6 @@ class AppController {
     setVal('setting-letterhead-margin', lab.letterheadTopMargin || 50);
 
     await this.renderAutoBackupUI();
-    await this.renderFirebaseSettingsUI();
-  }
-
-  async renderFirebaseSettingsUI() {
-    if (!window.firebaseConfigManager) return;
-    const cfg = window.firebaseConfigManager.getConfig();
-
-    const setVal = (id, val) => {
-      const el = document.getElementById(id);
-      if (el) el.value = val || '';
-    };
-
-    setVal('fb-setting-apikey', cfg.apiKey);
-    setVal('fb-setting-authdomain', cfg.authDomain);
-    setVal('fb-setting-projectid', cfg.projectId);
-    setVal('fb-setting-storage', cfg.storageBucket);
-    setVal('fb-setting-senderid', cfg.messagingSenderId);
-    setVal('fb-setting-appid', cfg.appId);
-
-    const projectDisplay = document.getElementById('fb-display-project-id');
-    if (projectDisplay) {
-      projectDisplay.innerText = cfg.projectId || 'Default Demo Project';
-    }
-
-    if (window.cloudSyncManager) {
-      window.cloudSyncManager.updateStatusBadge();
-    }
   }
 
   async saveLabSettings() {
@@ -2162,187 +1967,6 @@ class AppController {
       this.updateDiscountUIState();
     } else {
       this.showToast('Galat Admin PIN! Discount approve nahi hua.', 'error');
-    }
-  }
-
-  switchLoginTab(tab) {
-    const paneCloud = document.getElementById('pane-login-cloud');
-    const paneOffline = document.getElementById('pane-login-offline');
-    const tabCloud = document.getElementById('tab-login-cloud');
-    const tabOffline = document.getElementById('tab-login-offline');
-
-    if (tab === 'cloud') {
-      if (paneCloud) paneCloud.style.display = 'block';
-      if (paneOffline) paneOffline.style.display = 'none';
-      if (tabCloud) {
-        tabCloud.style.borderBottomColor = 'var(--primary)';
-        tabCloud.style.color = 'var(--primary)';
-      }
-      if (tabOffline) {
-        tabOffline.style.borderBottomColor = 'transparent';
-        tabOffline.style.color = '#64748b';
-      }
-    } else {
-      if (paneCloud) paneCloud.style.display = 'none';
-      if (paneOffline) paneOffline.style.display = 'block';
-      if (tabOffline) {
-        tabOffline.style.borderBottomColor = 'var(--primary)';
-        tabOffline.style.color = 'var(--primary)';
-      }
-      if (tabCloud) {
-        tabCloud.style.borderBottomColor = 'transparent';
-        tabCloud.style.color = '#64748b';
-      }
-      this.populateLoginUsers();
-    }
-  }
-
-  openRegisterAdminLabModal() {
-    this.closeModal('modal-login');
-    this.closeModal('modal-switch-lab');
-    this.showModal('modal-register-admin-lab');
-  }
-
-  openStaffSignupModal() {
-    this.closeModal('modal-login');
-    this.showModal('modal-staff-signup');
-  }
-
-  async performCloudLogin() {
-    const email = document.getElementById('cloud-login-email')?.value.trim();
-    const password = document.getElementById('cloud-login-password')?.value;
-
-    if (!email || !password) {
-      this.showToast('Email aur Password dono enter karein.', 'warning');
-      return;
-    }
-
-    try {
-      this.showToast('Cloud Firestore se login ho raha hai...', 'info');
-      const res = await window.authManager.loginWithEmail(email, password);
-      if (res.success) {
-        this.closeModal('modal-login');
-        this.showToast(`Swagatam, ${res.user.name}! Lab: ${res.lab.name}`, 'success');
-        this.updateLabHeaderUI();
-        setTimeout(() => window.location.reload(), 800);
-      } else {
-        this.showToast(res.message, 'error');
-      }
-    } catch (e) {
-      this.showToast('Login error: ' + e.message, 'error');
-    }
-  }
-
-  async submitRegisterAdminLab() {
-    try {
-      const labName = document.getElementById('reg-lab-name')?.value.trim();
-      const tagline = document.getElementById('reg-lab-tagline')?.value.trim();
-      const address = document.getElementById('reg-lab-address')?.value.trim();
-      const phone = document.getElementById('reg-lab-phone')?.value.trim();
-      const adminName = document.getElementById('reg-admin-name')?.value.trim();
-      const adminEmail = document.getElementById('reg-admin-email')?.value.trim();
-      const password = document.getElementById('reg-admin-password')?.value;
-      const pin = document.getElementById('reg-admin-pin')?.value.trim();
-
-      if (!labName || !adminEmail || !password) {
-        throw new Error('Lab Name, Admin Email aur Password bharna zaroori hai.');
-      }
-
-      this.showToast('Lab aur Admin account create ho raha hai...', 'info');
-      const res = await window.authManager.registerLabAdminWithFirebase({
-        labName, tagline, address, phone, email: adminEmail, adminName, adminEmail, password, pin
-      });
-
-      this.closeModal('modal-register-admin-lab');
-      this.showToast(`Swagatam! Lab "${res.lab.name}" successfully create ho gayi!`, 'success');
-      setTimeout(() => window.location.reload(), 900);
-    } catch (err) {
-      alert(err.message);
-      this.showToast(err.message, 'error');
-    }
-  }
-
-  async submitStaffSignup() {
-    try {
-      const email = document.getElementById('staff-signup-email')?.value.trim();
-      const password = document.getElementById('staff-signup-password')?.value;
-      const name = document.getElementById('staff-signup-name')?.value.trim();
-      const pin = document.getElementById('staff-signup-pin')?.value.trim();
-
-      if (!email || !password) {
-        throw new Error('Staff Email (Gmail) aur Password bharna zaroori hai.');
-      }
-
-      this.showToast('Admin verification check ho raha hai...', 'info');
-      const res = await window.authManager.registerStaffWithFirebase({
-        email, password, name, pin
-      });
-
-      this.closeModal('modal-staff-signup');
-      this.showToast(`Swagatam, ${res.user.name}! Aap Lab "${res.lab.name}" me successfully jud gaye!`, 'success');
-      setTimeout(() => window.location.reload(), 900);
-    } catch (err) {
-      alert(err.message);
-      this.showToast(err.message, 'error');
-    }
-  }
-
-  // Cloud Sync methods for Settings UI
-  async triggerCloudSyncNow() {
-    if (!window.cloudSyncManager) return;
-    await window.cloudSyncManager.syncToCloud(true);
-    await this.renderSettingsView();
-  }
-
-  async triggerCloudRestoreNow() {
-    if (!window.cloudSyncManager) return;
-    if (!confirm('CAUTION: Cloud Firestore se data restore karne par local data replace ho jayega. Kya aap aage badhna chahte hain?')) {
-      return;
-    }
-    try {
-      await window.cloudSyncManager.restoreFromCloud();
-      this.showToast('Cloud Firestore se data successfully restore ho gaya!', 'success');
-      setTimeout(() => window.location.reload(), 1200);
-    } catch (e) {
-      this.showToast(e.message, 'error');
-    }
-  }
-
-  async saveFirebaseSettingsFromUI() {
-    try {
-      const apiKey = document.getElementById('fb-setting-apikey')?.value.trim();
-      const authDomain = document.getElementById('fb-setting-authdomain')?.value.trim();
-      const projectId = document.getElementById('fb-setting-projectid')?.value.trim();
-      const storageBucket = document.getElementById('fb-setting-storage')?.value.trim();
-      const messagingSenderId = document.getElementById('fb-setting-senderid')?.value.trim();
-      const appId = document.getElementById('fb-setting-appid')?.value.trim();
-
-      if (!apiKey || !projectId) {
-        throw new Error('API Key aur Project ID bharna zaroori hai.');
-      }
-
-      window.firebaseConfigManager.saveConfig({
-        apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId
-      });
-
-      this.showToast('Firebase settings save ho gayi! System reload ho raha hai...', 'success');
-      setTimeout(() => window.location.reload(), 900);
-    } catch (e) {
-      this.showToast(e.message, 'error');
-    }
-  }
-
-  async testFirebaseConnectionFromUI() {
-    try {
-      this.showToast('Testing Firebase Firestore connection...', 'info');
-      const res = await window.firebaseConfigManager.testConnection();
-      if (res.success) {
-        this.showToast('✓ ' + res.message, 'success');
-      } else {
-        this.showToast('✕ ' + res.message, 'error');
-      }
-    } catch (e) {
-      this.showToast('Connection test error: ' + e.message, 'error');
     }
   }
 

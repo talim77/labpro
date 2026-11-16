@@ -117,13 +117,8 @@ class LabDB {
       const request = store.add(item);
 
       request.onsuccess = () => {
-        if (storeName !== 'settings') {
-          if (window.backupManager && typeof window.backupManager.scheduleAutoBackup === 'function') {
-            window.backupManager.scheduleAutoBackup();
-          }
-          if (window.cloudSyncManager && typeof window.cloudSyncManager.scheduleCloudSync === 'function') {
-            window.cloudSyncManager.scheduleCloudSync();
-          }
+        if (storeName !== 'settings' && window.backupManager && typeof window.backupManager.scheduleAutoBackup === 'function') {
+          window.backupManager.scheduleAutoBackup();
         }
         resolve(item);
       };
@@ -140,13 +135,8 @@ class LabDB {
       const request = store.put(item);
 
       request.onsuccess = () => {
-        if (storeName !== 'settings') {
-          if (window.backupManager && typeof window.backupManager.scheduleAutoBackup === 'function') {
-            window.backupManager.scheduleAutoBackup();
-          }
-          if (window.cloudSyncManager && typeof window.cloudSyncManager.scheduleCloudSync === 'function') {
-            window.cloudSyncManager.scheduleCloudSync();
-          }
+        if (storeName !== 'settings' && window.backupManager && typeof window.backupManager.scheduleAutoBackup === 'function') {
+          window.backupManager.scheduleAutoBackup();
         }
         resolve(item);
       };
@@ -163,13 +153,8 @@ class LabDB {
       const request = store.delete(key);
 
       request.onsuccess = () => {
-        if (storeName !== 'settings') {
-          if (window.backupManager && typeof window.backupManager.scheduleAutoBackup === 'function') {
-            window.backupManager.scheduleAutoBackup();
-          }
-          if (window.cloudSyncManager && typeof window.cloudSyncManager.scheduleCloudSync === 'function') {
-            window.cloudSyncManager.scheduleCloudSync();
-          }
+        if (storeName !== 'settings' && window.backupManager && typeof window.backupManager.scheduleAutoBackup === 'function') {
+          window.backupManager.scheduleAutoBackup();
         }
         resolve(true);
       };
