@@ -1,6 +1,8 @@
-# 🔬 Local Pathology Lab Management System (100% Offline)
+# 🔬 Local Pathology Lab Management System
 
-A modern, fast, and completely offline Pathology Lab Management Application designed to run on any PC without web hosting, without internet, and with zero software installations (no Node.js, no Python, no database server required).
+🌐 **Live WebApp on GitHub Pages**: [https://talim77.github.io/labpro/](https://talim77.github.io/labpro/)
+
+A modern, fast, and completely offline-capable Pathology Lab Management Application designed to run on any browser without complex software installations.
 
 ---
 
