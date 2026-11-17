@@ -237,9 +237,9 @@ class BackupManager {
   }
 
   /**
-   * Restore database from an uploaded JSON file
+   * Restore database from an uploaded JSON file, configure Admin PIN and auto-login
    */
-  async restoreBackupFromFile(file) {
+  async restoreBackupFromFile(file, customAdminPin = null) {
     return new Promise((resolve, reject) => {
       if (!file) return reject(new Error('Kripya backup JSON file select karein.'));
 
@@ -247,12 +247,8 @@ class BackupManager {
       reader.onload = async (e) => {
         try {
           const parsed = JSON.parse(e.target.result);
-          if (!parsed.stores || !parsed.stores.lab_profiles) {
-            return reject(new Error('Yeh file valid Lab Backup format me nahi hai.'));
-          }
-
-          await window.labDB.importDatabase(parsed);
-          resolve({ success: true, count: Object.keys(parsed.stores).length });
+          const result = await this.restoreBackupData(parsed, customAdminPin);
+          resolve(result);
         } catch (err) {
           reject(new Error('Backup restore me error: ' + err.message));
         }
@@ -261,6 +257,64 @@ class BackupManager {
       reader.onerror = () => reject(new Error('File read nahi ho saki.'));
       reader.readAsText(file);
     });
+  }
+
+  /**
+   * Core restore routine from parsed backup object
+   */
+  async restoreBackupData(parsed, customAdminPin = null) {
+    if (!parsed || !parsed.stores || !parsed.stores.lab_profiles || parsed.stores.lab_profiles.length === 0) {
+      throw new Error('Yeh file valid Lab Backup format me nahi hai (Lab profile missing).');
+    }
+
+    // 1. Import all collections into IndexedDB
+    await window.labDB.importDatabase(parsed);
+
+    // 2. Identify primary Lab
+    const labs = await window.labDB.getAll('lab_profiles');
+    const primaryLab = labs[0];
+    if (!primaryLab) throw new Error('Lab profile import nahi ho paya.');
+
+    // 3. Identify and configure Admin User
+    const users = await window.labDB.getAll('users', u => u.labId === primaryLab.id);
+    let adminUser = users.find(u => u.role === 'admin') || users[0];
+
+    // If custom PIN is provided, or if admin has no PIN, set the PIN
+    const pinToSet = customAdminPin ? String(customAdminPin).trim() : '1234';
+    if (adminUser) {
+      const pinHash = await window.authManager.hashPin(pinToSet);
+      adminUser.pinHash = pinHash;
+      delete adminUser.pin;
+      adminUser.isActivated = true;
+      adminUser.active = true;
+      await window.labDB.put('users', adminUser);
+    }
+
+    // 4. Set Active Lab and Active User Session (Immediate Auto-Login!)
+    window.authManager.currentLab = primaryLab;
+    localStorage.setItem('active_lab_id', primaryLab.id);
+
+    if (adminUser) {
+      window.authManager.currentUser = adminUser;
+      const safeUser = { ...adminUser };
+      delete safeUser.pin;
+      delete safeUser.pinHash;
+      localStorage.setItem('active_user_' + primaryLab.id, JSON.stringify(safeUser));
+    }
+
+    // 5. Ensure standard tests exist
+    if (window.testCatalogManager) {
+      await window.testCatalogManager.ensureDefaultTests(primaryLab.id);
+    }
+
+    return {
+      success: true,
+      lab: primaryLab,
+      user: adminUser,
+      pinUsed: pinToSet,
+      storesCount: Object.keys(parsed.stores).length,
+      patientsCount: parsed.stores.patients?.length || 0
+    };
   }
 }
 

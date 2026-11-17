@@ -160,12 +160,17 @@ class AppController {
               🔑 Login to System
             </button>
 
-            <!-- Fresh New Lab Setup Action -->
+            <!-- Fresh New Lab Setup & Restore Action -->
             <div style="margin-top:16px; padding-top:14px; border-top:1px solid #e2e8f0; text-align:center;">
-              <span style="display:block; font-size:12px; color:#64748b; margin-bottom:8px;">Naya Lab ya Naya Account setup karna chahte hain?</span>
-              <button type="button" class="btn btn-success" style="width:100%; font-weight:700; padding:9px;" onclick="window.app.openCreateLabModal(false)">
-                ➕ Setup New Lab Account (Naya Lab Banayein)
-              </button>
+              <span style="display:block; font-size:12px; color:#64748b; margin-bottom:8px;">Naya Lab ya Backup file se login karna chahte hain?</span>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <button type="button" class="btn btn-success" style="width:100%; font-weight:700; padding:9px;" onclick="window.app.openCreateLabModal(false, 'create')">
+                  ➕ Setup New Lab Account (Naya Lab Banayein)
+                </button>
+                <button type="button" class="btn btn-outline" style="width:100%; font-weight:700; padding:8px; color:#0284c7; border-color:#0284c7;" onclick="window.app.openCreateLabModal(false, 'restore')">
+                  📂 Restore from Backup (.JSON File)
+                </button>
+              </div>
             </div>
 
             <!-- Two-Step Staff Setup & Activation Trigger -->
@@ -272,118 +277,191 @@ class AppController {
           </div>
           <div class="modal-body">
             <div id="switch-lab-list-container" style="margin-bottom:16px;"></div>
-            <button class="btn btn-success" style="width:100%; font-weight:700;" onclick="window.app.openCreateLabModal(false)">
-              ➕ Setup New Lab Account (Naya Lab Banayein)
-            </button>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <button class="btn btn-success" style="width:100%; font-weight:700;" onclick="window.app.openCreateLabModal(false, 'create')">
+                ➕ Setup New Lab Account (Naya Lab Banayein)
+              </button>
+              <button class="btn btn-outline" style="width:100%; font-weight:700; color:#0284c7; border-color:#0284c7;" onclick="window.app.openCreateLabModal(false, 'restore')">
+                📂 Restore Lab from Backup (.JSON File)
+              </button>
+            </div>
           </div>
         </div>
       `;
       document.body.appendChild(modal);
     }
 
-    // 3. Create / Setup New Lab Modal
+    // 3. Create / Setup New Lab Modal (With Fresh Setup Tab + Backup Restore Tab)
     if (!document.getElementById('modal-create-lab')) {
       const modal = document.createElement('div');
       modal.className = 'modal-backdrop';
       modal.id = 'modal-create-lab';
       modal.innerHTML = `
-        <div class="modal-dialog" style="max-width:560px;">
-          <div class="modal-header">
+        <div class="modal-dialog" style="max-width:580px;">
+          <div class="modal-header" style="border-bottom:none; padding-bottom:8px;">
             <div>
-              <h3 id="create-lab-title" style="margin:0;">🔬 Fresh Lab Setup & New Account</h3>
-              <span id="create-lab-subtitle" style="font-size:12px; color:#64748b;">Set up your Pathology / Diagnostic Lab in seconds</span>
+              <h3 id="create-lab-title" style="margin:0;">🔬 Lab Setup & Onboarding</h3>
+              <span id="create-lab-subtitle" style="font-size:12px; color:#64748b;">Naya Lab setup karein ya backup file upload karke sidhe login karein</span>
             </div>
             <button class="modal-close" id="btn-close-create-lab" onclick="window.app.closeModal('modal-create-lab')">&times;</button>
           </div>
-          <div class="modal-body" style="max-height:76vh; overflow-y:auto; padding:18px 22px;">
+
+          <!-- TAB SWITCHER -->
+          <div style="padding:10px 22px 0 22px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; gap:10px;">
+            <button type="button" id="tab-btn-create-lab" class="btn btn-sm btn-primary" onclick="window.app.switchSetupTab('create')" style="flex:1; padding:9px 12px; font-weight:700; border-radius:6px 6px 0 0;">
+              ➕ 1. Fresh New Lab Setup
+            </button>
+            <button type="button" id="tab-btn-restore-lab" class="btn btn-sm btn-outline" onclick="window.app.switchSetupTab('restore')" style="flex:1; padding:9px 12px; font-weight:700; border-radius:6px 6px 0 0; color:#0284c7; border-color:#bae6fd;">
+              📂 2. Restore from Backup (.JSON)
+            </button>
+          </div>
+
+          <div class="modal-body" style="max-height:72vh; overflow-y:auto; padding:18px 22px;">
             
             <!-- Welcome Note for First Time -->
             <div id="first-time-welcome-box" style="display:none; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:12px; margin-bottom:16px; font-size:12.5px; color:#1e40af; line-height:1.5;">
               👋 <strong>Welcome to Pathology Lab Management System!</strong><br>
-              Koi bhi default account logged in nahi hai. Kripya niche apne Lab aur Admin account ki details bharkar turant apna fresh setup karein:
+              Aap yahan se apna <strong>Naya Lab Setup</strong> kar sakte hain, ya agar aapke paas pehle se <strong>.JSON Backup file</strong> hai toh use upload karke turant apna poora data restore karke login kar sakte hain:
             </div>
 
-            <!-- SECTION 1: LAB INFORMATION -->
-            <div style="font-size:13px; font-weight:700; color:#0284c7; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; border-bottom:2px solid #e0f2fe; padding-bottom:4px;">
-              1. Lab Profile Details
-            </div>
-
-            <div class="form-group">
-              <label class="form-label required">Lab Name</label>
-              <input type="text" id="new-lab-name" class="form-control" placeholder="e.g. LifeCare Pathology & Diagnostic Centre" required style="font-weight:600;">
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Lab Tagline / Subtitle</label>
-              <input type="text" id="new-lab-tagline" class="form-control" placeholder="e.g. Computerized Pathology & Diagnostic Centre">
-            </div>
-
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-              <div class="form-group">
-                <label class="form-label">Phone / Mobile No.</label>
-                <input type="tel" id="new-lab-phone" class="form-control" placeholder="e.g. +91 98765 43210">
+            <!-- TAB 1: CREATE NEW LAB CONTENT -->
+            <div id="setup-tab-create-content">
+              <!-- SECTION 1: LAB INFORMATION -->
+              <div style="font-size:13px; font-weight:700; color:#0284c7; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; border-bottom:2px solid #e0f2fe; padding-bottom:4px;">
+                1. Lab Profile Details
               </div>
+
               <div class="form-group">
-                <label class="form-label">Lab Reg. / License No.</label>
-                <input type="text" id="new-lab-regno" class="form-control" placeholder="e.g. REG/2026/89">
+                <label class="form-label required">Lab Name</label>
+                <input type="text" id="new-lab-name" class="form-control" placeholder="e.g. LifeCare Pathology & Diagnostic Centre" required style="font-weight:600;">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Lab Tagline / Subtitle</label>
+                <input type="text" id="new-lab-tagline" class="form-control" placeholder="e.g. Computerized Pathology & Diagnostic Centre">
+              </div>
+
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                <div class="form-group">
+                  <label class="form-label">Phone / Mobile No.</label>
+                  <input type="tel" id="new-lab-phone" class="form-control" placeholder="e.g. +91 98765 43210">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Lab Reg. / License No.</label>
+                  <input type="text" id="new-lab-regno" class="form-control" placeholder="e.g. REG/2026/89">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Lab Address</label>
+                <input type="text" id="new-lab-address" class="form-control" placeholder="e.g. Near City Hospital, Station Road">
+              </div>
+
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                <div class="form-group">
+                  <label class="form-label">Pathologist / Doctor Name</label>
+                  <input type="text" id="new-lab-pathologist" class="form-control" placeholder="e.g. Dr. S. K. Verma (MD)">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Technologist Name</label>
+                  <input type="text" id="new-lab-technologist" class="form-control" placeholder="e.g. R. K. Sharma (DMLT)">
+                </div>
+              </div>
+
+              <!-- SECTION 2: ADMIN USER ACCOUNT -->
+              <div style="font-size:13px; font-weight:700; color:#0284c7; text-transform:uppercase; letter-spacing:0.5px; margin-top:16px; margin-bottom:10px; border-bottom:2px solid #e0f2fe; padding-bottom:4px;">
+                2. Admin / Owner Account Credentials
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">Admin Full Name</label>
+                <input type="text" id="new-admin-name" class="form-control" placeholder="e.g. Dr. Ramesh Kumar" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">Admin Login Username</label>
+                <input type="text" id="new-admin-user" class="form-control" placeholder="e.g. admin or mobile number" required style="font-weight:600;">
+                <span style="font-size:11px; color:#64748b;">Future me is username ya mobile number se aap login karenge.</span>
+              </div>
+
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:8px;">
+                <div class="form-group">
+                  <label class="form-label required">Create 4-Digit Security PIN</label>
+                  <input type="password" id="new-admin-pin" class="form-control" maxlength="6" placeholder="••••" required style="font-size:18px; font-weight:800; letter-spacing:4px; text-align:center;">
+                </div>
+                <div class="form-group">
+                  <label class="form-label required">Confirm 4-Digit PIN</label>
+                  <input type="password" id="new-admin-pin-confirm" class="form-control" maxlength="6" placeholder="••••" required style="font-size:18px; font-weight:800; letter-spacing:4px; text-align:center;">
+                </div>
+              </div>
+
+              <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:10px; margin-top:12px; font-size:12px; color:#15803d; display:flex; align-items:center; gap:8px;">
+                <span>✓</span>
+                <div>Standard pathology test catalog (CBC, Blood Sugar, Lipid, LFT, KFT, Urine R/M, etc.) will be automatically configured with normal biological reference ranges.</div>
               </div>
             </div>
 
-            <div class="form-group">
-              <label class="form-label">Lab Address</label>
-              <input type="text" id="new-lab-address" class="form-control" placeholder="e.g. Near City Hospital, Station Road">
-            </div>
-
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-              <div class="form-group">
-                <label class="form-label">Pathologist / Doctor Name</label>
-                <input type="text" id="new-lab-pathologist" class="form-control" placeholder="e.g. Dr. S. K. Verma (MD)">
+            <!-- TAB 2: RESTORE FROM BACKUP CONTENT -->
+            <div id="setup-tab-restore-content" style="display:none;">
+              <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:14px; margin-bottom:16px; font-size:12.5px; color:#0369a1; line-height:1.5;">
+                📂 <strong>Already have a Lab Backup JSON file?</strong><br>
+                Apne PC se backup file upload karein. Sabhi Lab details, Patients, Reports, Doctors, aur Tests turant restore ho jayenge aur aap sidhe login ho jayenge.
               </div>
+
               <div class="form-group">
-                <label class="form-label">Technologist Name</label>
-                <input type="text" id="new-lab-technologist" class="form-control" placeholder="e.g. R. K. Sharma (DMLT)">
+                <label class="form-label required">Select Lab Backup File (.json)</label>
+                <div style="border:2px dashed #0284c7; border-radius:8px; padding:22px; text-align:center; background:#f8fafc; cursor:pointer;" onclick="document.getElementById('setup-backup-file-input').click()">
+                  <div style="font-size:36px; margin-bottom:6px;">📄</div>
+                  <strong id="setup-backup-file-name" style="font-size:14px; color:#0284c7;">Click here to choose .JSON Backup File</strong>
+                  <span style="display:block; font-size:11.5px; color:#64748b; margin-top:4px;">Supports all Lab_AutoBackup_Data.json & exported backup files</span>
+                </div>
+                <input type="file" id="setup-backup-file-input" accept=".json" style="display:none;" onchange="window.app.handleSetupBackupFileSelected(event)">
               </div>
-            </div>
 
-            <!-- SECTION 2: ADMIN USER ACCOUNT -->
-            <div style="font-size:13px; font-weight:700; color:#0284c7; text-transform:uppercase; letter-spacing:0.5px; margin-top:16px; margin-bottom:10px; border-bottom:2px solid #e0f2fe; padding-bottom:4px;">
-              2. Admin / Owner Account Credentials
-            </div>
-
-            <div class="form-group">
-              <label class="form-label required">Admin Full Name</label>
-              <input type="text" id="new-admin-name" class="form-control" placeholder="e.g. Dr. Ramesh Kumar" required>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label required">Admin Login Username</label>
-              <input type="text" id="new-admin-user" class="form-control" placeholder="e.g. admin or mobile number" required style="font-weight:600;">
-              <span style="font-size:11px; color:#64748b;">Future me is username ya mobile number se aap login karenge.</span>
-            </div>
-
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:8px;">
-              <div class="form-group">
-                <label class="form-label required">Create 4-Digit Security PIN</label>
-                <input type="password" id="new-admin-pin" class="form-control" maxlength="6" placeholder="••••" required style="font-size:18px; font-weight:800; letter-spacing:4px; text-align:center;">
+              <!-- Backup File Preview (hidden until selected) -->
+              <div id="setup-backup-preview-box" style="display:none; background:#ffffff; border:1px solid #cbd5e1; border-radius:8px; padding:14px; margin-bottom:14px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                <div style="font-weight:700; color:#0f172a; margin-bottom:10px; font-size:13px; display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:6px;">
+                  <span style="color:#16a34a;">✓ Verified Backup File Details</span>
+                  <span id="setup-preview-date" style="font-weight:400; font-size:11px; color:#64748b;"></span>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:12.5px;">
+                  <div>🔬 <strong>Lab Name:</strong> <span id="setup-preview-lab-name" style="color:#0284c7; font-weight:600;">--</span></div>
+                  <div>👤 <strong>Admin:</strong> <span id="setup-preview-admin-name" style="font-weight:600;">--</span></div>
+                  <div>📋 <strong>Patients:</strong> <span id="setup-preview-patients-count" style="font-weight:600;">0</span></div>
+                  <div>🧪 <strong>Tests:</strong> <span id="setup-preview-tests-count" style="font-weight:600;">0</span></div>
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label required">Confirm 4-Digit PIN</label>
-                <input type="password" id="new-admin-pin-confirm" class="form-control" maxlength="6" placeholder="••••" required style="font-size:18px; font-weight:800; letter-spacing:4px; text-align:center;">
-              </div>
-            </div>
 
-            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:10px; margin-top:12px; font-size:12px; color:#15803d; display:flex; align-items:center; gap:8px;">
-              <span>✓</span>
-              <div>Standard pathology test catalog (CBC, Blood Sugar, Lipid, LFT, KFT, Urine R/M, etc.) will be automatically configured with normal biological reference ranges.</div>
+              <!-- Admin PIN for Login -->
+              <div class="form-group" style="margin-top:14px;">
+                <label class="form-label required">Set 4-Digit Security PIN for Admin Login</label>
+                <input type="password" id="setup-restore-admin-pin" class="form-control" maxlength="6" placeholder="e.g. 1234" value="1234" style="font-size:18px; font-weight:800; letter-spacing:4px; text-align:center;">
+                <span style="font-size:11px; color:#64748b;">Security ke liye backup file me PIN save nahi hota. Is PC par login karne ke liye apna 4-digit PIN yahan set karein (Default: 1234).</span>
+              </div>
+
+              <div style="background:#fef3c7; border:1px solid #fde68a; border-radius:6px; padding:10px; margin-top:10px; font-size:11.5px; color:#92400e;">
+                🔒 <strong>100% Offline & Private:</strong> Yeh file kisi server ya internet par nahi jayegi. Sirf isi PC ke local browser storage me restore hogi.
+              </div>
             </div>
 
           </div>
-          <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+
+          <!-- FOOTER 1: FOR CREATE TAB -->
+          <div class="modal-footer" id="setup-footer-create" style="display:flex; justify-content:space-between; align-items:center;">
             <button class="btn btn-secondary" id="btn-cancel-create-lab" onclick="window.app.closeModal('modal-create-lab')">Cancel</button>
             <button class="btn btn-primary" style="padding:9px 18px; font-weight:700;" onclick="window.app.createNewLabFromModal()">
               🚀 Complete Setup & Start Using Lab
             </button>
           </div>
+
+          <!-- FOOTER 2: FOR RESTORE TAB -->
+          <div class="modal-footer" id="setup-footer-restore" style="display:none; justify-content:space-between; align-items:center;">
+            <button class="btn btn-secondary" id="btn-cancel-restore-lab" onclick="window.app.closeModal('modal-create-lab')">Cancel</button>
+            <button class="btn btn-success" style="padding:9px 18px; font-weight:700;" onclick="window.app.submitSetupBackupRestore()">
+              🚀 Restore Lab Data & Login Directly
+            </button>
+          </div>
+
         </div>
       `;
       document.body.appendChild(modal);
@@ -2075,19 +2153,134 @@ class AppController {
     this.showModal('modal-login');
   }
 
-  openCreateLabModal(isFirstTime = false) {
+  switchSetupTab(tabName = 'create') {
+    const btnCreate = document.getElementById('tab-btn-create-lab');
+    const btnRestore = document.getElementById('tab-btn-restore-lab');
+    const contentCreate = document.getElementById('setup-tab-create-content');
+    const contentRestore = document.getElementById('setup-tab-restore-content');
+    const footerCreate = document.getElementById('setup-footer-create');
+    const footerRestore = document.getElementById('setup-footer-restore');
+
+    if (tabName === 'restore') {
+      if (btnCreate) {
+        btnCreate.className = 'btn btn-sm btn-outline';
+        btnCreate.style.color = '#64748b';
+        btnCreate.style.borderColor = '#cbd5e1';
+      }
+      if (btnRestore) {
+        btnRestore.className = 'btn btn-sm btn-primary';
+        btnRestore.style.color = '#fff';
+      }
+      if (contentCreate) contentCreate.style.display = 'none';
+      if (contentRestore) contentRestore.style.display = 'block';
+      if (footerCreate) footerCreate.style.display = 'none';
+      if (footerRestore) footerRestore.style.display = 'flex';
+    } else {
+      if (btnCreate) {
+        btnCreate.className = 'btn btn-sm btn-primary';
+        btnCreate.style.color = '#fff';
+      }
+      if (btnRestore) {
+        btnRestore.className = 'btn btn-sm btn-outline';
+        btnRestore.style.color = '#0284c7';
+        btnRestore.style.borderColor = '#bae6fd';
+      }
+      if (contentCreate) contentCreate.style.display = 'block';
+      if (contentRestore) contentRestore.style.display = 'none';
+      if (footerCreate) footerCreate.style.display = 'flex';
+      if (footerRestore) footerRestore.style.display = 'none';
+    }
+  }
+
+  handleSetupBackupFileSelected(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    const fileNameEl = document.getElementById('setup-backup-file-name');
+    if (fileNameEl) fileNameEl.innerText = `📄 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        if (!parsed.stores || !parsed.stores.lab_profiles || parsed.stores.lab_profiles.length === 0) {
+          throw new Error('Invalid file: Isme koi Lab profile nahi mili.');
+        }
+
+        this.pendingRestoreBackupData = parsed;
+
+        const lab = parsed.stores.lab_profiles[0];
+        const admin = (parsed.stores.users || []).find(u => u.role === 'admin') || (parsed.stores.users || [])[0];
+        const patientsCount = (parsed.stores.patients || []).length;
+        const testsCount = (parsed.stores.test_catalog || []).length;
+        const exportDate = parsed.exportedAt ? new Date(parsed.exportedAt).toLocaleDateString('en-IN') : 'Recent';
+
+        const previewBox = document.getElementById('setup-backup-preview-box');
+        if (previewBox) previewBox.style.display = 'block';
+
+        const setPreview = (id, txt) => {
+          const el = document.getElementById(id);
+          if (el) el.innerText = txt;
+        };
+        setPreview('setup-preview-lab-name', lab.name || 'Unnamed Lab');
+        setPreview('setup-preview-admin-name', admin ? `${admin.name} (${admin.username || 'admin'})` : 'Admin');
+        setPreview('setup-preview-patients-count', `${patientsCount} Patients`);
+        setPreview('setup-preview-tests-count', `${testsCount} Tests`);
+        setPreview('setup-preview-date', `Exported: ${exportDate}`);
+
+        this.showToast(`Backup file read successfully: "${lab.name}" mila!`, 'success');
+      } catch (err) {
+        this.pendingRestoreBackupData = null;
+        alert('File read error: ' + err.message);
+        if (fileNameEl) fileNameEl.innerText = 'Click here to choose .JSON Backup File';
+        const previewBox = document.getElementById('setup-backup-preview-box');
+        if (previewBox) previewBox.style.display = 'none';
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  async submitSetupBackupRestore() {
+    if (!this.pendingRestoreBackupData) {
+      alert('Kripya pehle apne PC se backup .JSON file select karein.');
+      return;
+    }
+
+    const pin = document.getElementById('setup-restore-admin-pin')?.value.trim() || '1234';
+    if (!pin || pin.length < 4) {
+      alert('Security PIN kam se kam 4 digits ka numeric number hona chahiye (jaise: 1234).');
+      return;
+    }
+
+    try {
+      const res = await window.backupManager.restoreBackupData(this.pendingRestoreBackupData, pin);
+      this.closeModal('modal-create-lab');
+      this.closeModal('modal-login');
+      this.showToast(`🎉 Lab "${res.lab.name}" successfully restore ho gaya aur aap login ho chuke hain!`, 'success');
+      this.updateLabHeaderUI();
+      setTimeout(() => {
+        window.location.reload();
+      }, 600);
+    } catch (err) {
+      alert('Restore failed: ' + err.message);
+    }
+  }
+
+  openCreateLabModal(isFirstTime = false, initialTab = 'create') {
     this.closeModal('modal-switch-lab');
     this.closeModal('modal-login');
 
     const welcomeBox = document.getElementById('first-time-welcome-box');
     const closeBtn = document.getElementById('btn-close-create-lab');
     const cancelBtn = document.getElementById('btn-cancel-create-lab');
+    const cancelRestoreBtn = document.getElementById('btn-cancel-restore-lab');
 
     const needsFirstTime = isFirstTime || !window.authManager.currentLab;
 
     if (welcomeBox) welcomeBox.style.display = needsFirstTime ? 'block' : 'none';
     if (closeBtn) closeBtn.style.display = needsFirstTime ? 'none' : 'block';
     if (cancelBtn) cancelBtn.style.display = needsFirstTime ? 'none' : 'inline-block';
+    if (cancelRestoreBtn) cancelRestoreBtn.style.display = needsFirstTime ? 'none' : 'inline-block';
 
     const clearEl = (id, val = '') => {
       const el = document.getElementById(id);
@@ -2104,7 +2297,17 @@ class AppController {
     clearEl('new-admin-user', 'admin');
     clearEl('new-admin-pin');
     clearEl('new-admin-pin-confirm');
+    clearEl('setup-backup-file-input');
+    clearEl('setup-restore-admin-pin', '1234');
 
+    const previewBox = document.getElementById('setup-backup-preview-box');
+    if (previewBox) previewBox.style.display = 'none';
+    const fileNameEl = document.getElementById('setup-backup-file-name');
+    if (fileNameEl) fileNameEl.innerText = 'Click here to choose .JSON Backup File';
+
+    this.pendingRestoreBackupData = null;
+
+    this.switchSetupTab(initialTab);
     this.showModal('modal-create-lab');
   }
 

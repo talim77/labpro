@@ -24,7 +24,6 @@
         "labId": "lab_5quu883vl",
         "name": "Admin (asmin)",
         "username": "admin",
-        "pin": "0000",
         "role": "admin",
         "active": true,
         "createdAt": "2026-11-03T07:00:09.379Z"
@@ -34,7 +33,6 @@
         "labId": "lab_5quu883vl",
         "name": "Talim",
         "username": "talimz77",
-        "pin": "4212",
         "phone": "",
         "role": "staff",
         "active": true,
@@ -45,7 +43,6 @@
         "labId": "lab_5quu883vl",
         "name": "Sakib",
         "username": "sk",
-        "pin": "0000",
         "phone": "",
         "role": "staff",
         "active": true,

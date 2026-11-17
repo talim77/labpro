@@ -173,7 +173,19 @@ class LabDB {
     };
 
     for (const store of stores) {
-      backupData.stores[store] = await this.getAll(store);
+      const items = await this.getAll(store);
+      if (store === 'users') {
+        // STRICT RULE: Backup file me sirf User ID aur profile details hongi, PIN ya Password bilkul save nahi hoga
+        backupData.stores[store] = items.map(user => {
+          const sanitized = { ...user };
+          delete sanitized.pin;
+          delete sanitized.pinHash;
+          delete sanitized.password;
+          return sanitized;
+        });
+      } else {
+        backupData.stores[store] = items;
+      }
     }
 
     return backupData;
