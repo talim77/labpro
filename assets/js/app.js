@@ -647,6 +647,7 @@ class AppController {
     }
 
     this.recalculateBillingTotals();
+    this.updateSelectedTestsPills();
   }
 
   filterBillingTests(query) {
@@ -709,7 +710,23 @@ class AppController {
     if (countEl) {
       countEl.innerText = `${checkboxes.length} selected`;
     }
+    this.updateSelectedTestsPills();
     this.recalculateBillingTotals();
+  }
+
+  updateSelectedTestsPills() {
+    const container = document.getElementById('selected-tests-tags-container');
+    if (!container) return;
+    const checked = Array.from(document.querySelectorAll('.billing-test-chk:checked'));
+    if (checked.length === 0) {
+      container.innerHTML = '<span style="font-size:12px; color:#94a3b8; font-style:italic;">Bayein taraf (Left side) se blood tests select karein...</span>';
+      return;
+    }
+    container.innerHTML = checked.map(c => `
+      <span class="badge badge-info" style="font-size:11.5px; padding:4px 8px; display:inline-flex; align-items:center; gap:4px; border-radius:4px; background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;">
+        ✓ ${c.dataset.name} <strong style="color:#0284c7;">(₹${c.dataset.price})</strong>
+      </span>
+    `).join('');
   }
 
   recalculateBillingTotals() {

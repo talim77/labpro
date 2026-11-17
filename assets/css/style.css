@@ -259,6 +259,26 @@ body {
   gap: 18px;
 }
 
+/* 30% - 70% Layout for New Patient Registration & Billing */
+.grid-billing-layout {
+  display: grid;
+  grid-template-columns: 30% calc(70% - 18px);
+  gap: 18px;
+  align-items: flex-start;
+}
+
+@media (max-width: 1100px) {
+  .grid-billing-layout {
+    grid-template-columns: 34% calc(66% - 18px);
+  }
+}
+
+@media (max-width: 900px) {
+  .grid-billing-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 .card {
   background: var(--surface);
   border: 1px solid var(--border);

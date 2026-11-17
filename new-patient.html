@@ -110,23 +110,48 @@
 
       <!-- CONTENT AREA -->
       <main class="content-area">
-        <div class="grid-cols-2" style="align-items:flex-start;">
+        <div class="grid-billing-layout">
           
-          <!-- Left Column: Patient Demographics -->
-          <div class="card">
-            <h3 style="font-size:16px; font-weight:700; margin-bottom:16px; color:#0284c7;">1. Patient Demographics</h3>
-            
-            <div class="form-group">
-              <label class="form-label required">Patient Full Name</label>
-              <input type="text" id="patient-name" class="form-control" placeholder="e.g. Ramesh Kumar">
+          <!-- LEFT COLUMN (30%): TEST LIST / CATALOG ONLY (WITH SCROLL) -->
+          <div class="card" style="display:flex; flex-direction:column; max-height:calc(100vh - 120px); position:sticky; top:80px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <div>
+                <h3 style="font-size:15px; font-weight:700; color:#0284c7; margin:0;">🔬 Test Catalog</h3>
+                <span style="font-size:11px; color:#64748b;">Select required tests</span>
+              </div>
+              <span id="billing-test-selected-count" style="font-size:12px; font-weight:700; color:#0284c7; background:#e0f2fe; padding:3px 8px; border-radius:4px; border:1px solid #bae6fd;">0 selected</span>
             </div>
 
-            <div style="display:grid; grid-template-columns: 2fr 1fr 2fr; gap:12px;">
-              <div class="form-group">
-                <label class="form-label required">Age</label>
-                <input type="number" id="patient-age" class="form-control" placeholder="35">
+            <!-- Quick Search Input -->
+            <div style="margin-bottom:10px;">
+              <input type="text" id="billing-test-search" class="form-control" placeholder="🔍 Search test (e.g. CBC, Sugar, Lipid)..." style="font-size:12.5px; padding:7px 10px;" oninput="window.app.filterBillingTests(this.value)">
+            </div>
+
+            <!-- Scrollable Test Checkboxes List -->
+            <div id="billing-test-checkboxes" style="flex:1; overflow-y:auto; border:1px solid #e2e8f0; padding:8px; border-radius:6px; background:#f8fafc; min-height:380px; max-height:calc(100vh - 250px);">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN (70%): PATIENT DEMOGRAPHICS & PAYMENT DETAILS -->
+          <div class="card">
+            <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; color:#0284c7; display:flex; align-items:center; gap:6px;">
+              <span>👤</span> Patient Demographics
+            </h3>
+            
+            <!-- ROW 1: 4 BOXES IN ONE ROW (Patient Name | Age | Unit | Gender) -->
+            <div style="display:grid; grid-template-columns: 3.2fr 1.1fr 1.2fr 1.6fr; gap:12px; margin-bottom:14px;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label required">Patient Full Name</label>
+                <input type="text" id="patient-name" class="form-control" placeholder="e.g. Ramesh Kumar">
               </div>
-              <div class="form-group">
+
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label required">Age</label>
+                <input type="number" id="patient-age" class="form-control" placeholder="35" min="0">
+              </div>
+
+              <div class="form-group" style="margin-bottom:0;">
                 <label class="form-label">Unit</label>
                 <select id="patient-age-unit" class="form-control">
                   <option value="Years">Years</option>
@@ -134,7 +159,8 @@
                   <option value="Days">Days</option>
                 </select>
               </div>
-              <div class="form-group">
+
+              <div class="form-group" style="margin-bottom:0;">
                 <label class="form-label required">Gender</label>
                 <select id="patient-gender" class="form-control">
                   <option value="male">Male</option>
@@ -144,103 +170,107 @@
               </div>
             </div>
 
-            <div class="form-group">
-              <label class="form-label">Contact / Mobile Number</label>
-              <input type="tel" id="patient-phone" class="form-control" placeholder="e.g. 9876543210">
+            <!-- ROW 2: Address -->
+            <div class="form-group" style="margin-bottom:14px;">
+              <label class="form-label">Address:</label>
+              <input type="text" id="patient-address" class="form-control" placeholder="e.g. Ward 4, Civil Lines, Near City Hospital">
             </div>
 
-            <div class="form-group">
-              <label class="form-label">Patient Address (Optional)</label>
-              <input type="text" id="patient-address" class="form-control" placeholder="e.g. Ward 4, Civil Lines">
-            </div>
-
-            <!-- Referring Doctor with Quick Add Button -->
-            <div class="form-group">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                <label class="form-label required" style="margin-bottom:0;">Referring Doctor</label>
-                <button type="button" class="btn btn-outline btn-sm" onclick="window.app.openQuickDoctorModal()" style="font-size:12px; padding:3px 10px; color:#0284c7; border-color:#38bdf8;">
-                  ➕ Add New Doctor
-                </button>
-              </div>
-              <select id="patient-doctor-select" class="form-control">
-                <!-- Populated dynamically -->
-              </select>
-              <small style="color:#64748b; font-size:11px; margin-top:4px; display:block;">
-                * Doctor select karne par unka referral commission auto-track hoga. Agar doctor list me nahi hai toh upar <strong>"+ Add New Doctor"</strong> dabayein.
-              </small>
-            </div>
-          </div>
-
-          <!-- Right Column: Test Selection & Billing -->
-          <div class="card">
-            <h3 style="font-size:16px; font-weight:700; margin-bottom:16px; color:#0284c7;">2. Select Tests & Billing</h3>
-
-            <div class="form-group">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                <label class="form-label required" style="margin-bottom:0;">Select Blood / Pathology Tests</label>
-                <span id="billing-test-selected-count" style="font-size:12px; font-weight:600; color:#0284c7;">0 selected</span>
-              </div>
-              <input type="text" id="billing-test-search" class="form-control" placeholder="🔍 Search test (e.g. CBC, Fasting Sugar, Lipid, Thyroid, Dengue, KFT, Urine)..." style="margin-bottom:8px; font-size:13px;" oninput="window.app.filterBillingTests(this.value)">
-              <div id="billing-test-checkboxes" style="max-height:260px; overflow-y:auto; border:1px solid #e2e8f0; padding:10px; border-radius:6px; background:#f8fafc;">
-                <!-- Populated dynamically -->
-              </div>
-            </div>
-
-            <!-- Billing Calculation Box -->
-            <div style="background:#f1f5f9; border-radius:6px; padding:16px; margin-top:16px;">
-              <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px;">
-                <span>Subtotal Amount:</span>
-                <strong id="bill-summary-subtotal">₹0.00</strong>
+            <!-- ROW 3: Mobile No. | Referring Doctor -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:20px;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Mobile No.</label>
+                <input type="tel" id="patient-phone" class="form-control" placeholder="e.g. 9876543210">
               </div>
 
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <div>
-                  <label class="form-label" style="margin-bottom:0;">Special Discount (₹):</label>
-                  <span id="discount-permission-indicator" style="display:block; font-size:10.5px; color:#64748b;"></span>
+              <div class="form-group" style="margin-bottom:0;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                  <label class="form-label required" style="margin-bottom:0;">Referring Doctor</label>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="window.app.openQuickDoctorModal()" style="font-size:11px; padding:2px 8px; color:#0284c7; border-color:#38bdf8;">
+                    ➕ Add New Doctor
+                  </button>
                 </div>
-                <input type="number" id="patient-discount" class="form-control" style="width:120px; text-align:right;" value="0" min="0" oninput="window.app.recalculateBillingTotals()">
+                <select id="patient-doctor-select" class="form-control">
+                  <!-- Populated dynamically -->
+                </select>
               </div>
+            </div>
 
-              <!-- Discount Approval Alert Box -->
-              <div id="discount-approval-box" class="discount-alert-box" style="display:none;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                <p id="discount-approval-status-text">
-                  Discount requires Admin Approval.
-                </p>
-              </div>
+            <div style="height:1px; background:#e2e8f0; margin:20px 0 16px 0;"></div>
 
-              <div style="display:flex; justify-content:space-between; margin-top:12px; padding-top:8px; border-top:1.5px solid #cbd5e1; font-size:16px; font-weight:800; color:#0f172a;">
-                <span>Final Payable Total:</span>
-                <span id="bill-summary-final" style="color:#0284c7;">₹0.00</span>
-              </div>
-
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:12px;">
-                <div>
-                  <label class="form-label required">Paid Amount (₹)</label>
-                  <input type="number" id="patient-paid" class="form-control" value="0" oninput="this.dataset.autoFilled='false'; window.app.recalculateBillingTotals();">
-                </div>
-                <div>
-                  <label class="form-label required">Payment Mode</label>
-                  <select id="patient-payment-mode" class="form-control">
-                    <option value="Cash">Cash</option>
-                    <option value="UPI / QR">UPI / QR Code</option>
-                    <option value="Card">Debit/Credit Card</option>
-                    <option value="Net Banking">Net Banking</option>
-                  </select>
+            <!-- PAYMENT DETAILS & BILLING SECTION (ALIGNED TO RIGHT) -->
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:20px; flex-wrap:wrap;">
+              
+              <!-- Left side of bottom: Selected tests summary pills -->
+              <div style="flex:1; min-width:240px;">
+                <h4 style="font-size:13px; font-weight:700; color:#334155; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+                  <span>📋</span> Selected Tests Summary
+                </h4>
+                <div id="selected-tests-tags-container" style="display:flex; flex-wrap:wrap; gap:6px; min-height:80px; max-height:220px; overflow-y:auto; padding:10px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:6px;">
+                  <span style="font-size:12px; color:#94a3b8; font-style:italic;">Bayein taraf (Left side) se blood tests select karein...</span>
                 </div>
               </div>
 
-              <!-- Live Balance Due preview -->
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding:6px 10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; font-size:13px;">
-                <span style="font-weight:600; color:#475569;">Balance Due / Outstanding:</span>
-                <span id="bill-summary-due" style="font-weight:700; color:#16a34a;">₹0.00 (Fully Paid)</span>
-              </div>
-            </div>
+              <!-- Right side of bottom: Billing & Payment Details -->
+              <div style="width:100%; max-width:440px; background:#f1f5f9; border-radius:8px; padding:16px; border:1px solid #cbd5e1; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px;">
+                  <span style="color:#475569;">Subtotal Amount:</span>
+                  <strong id="bill-summary-subtotal" style="font-size:15px; color:#0f172a;">₹0.00</strong>
+                </div>
 
-            <div style="margin-top:20px; display:flex; justify-content:flex-end;">
-              <button class="btn btn-success" style="padding:12px 24px; font-size:15px;" onclick="window.app.submitNewPatient()">
-                ✓ Save & Register Patient
-              </button>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <div>
+                    <label class="form-label" style="margin-bottom:0; font-size:12.5px;">Special Discount (₹):</label>
+                    <span id="discount-permission-indicator" style="display:block; font-size:10.5px; color:#64748b;"></span>
+                  </div>
+                  <input type="number" id="patient-discount" class="form-control" style="width:120px; text-align:right; font-weight:700; font-size:14px;" value="0" min="0" oninput="window.app.recalculateBillingTotals()">
+                </div>
+
+                <!-- Discount Approval Alert Box -->
+                <div id="discount-approval-box" class="discount-alert-box" style="display:none; margin-bottom:8px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                  <p id="discount-approval-status-text" style="font-size:11.5px; margin:0;">
+                    Discount requires Admin Approval.
+                  </p>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:10px; border-top:1.5px solid #cbd5e1; font-size:16px; font-weight:800; color:#0f172a;">
+                  <span>Final Payable Total:</span>
+                  <span id="bill-summary-final" style="color:#0284c7; font-size:18px;">₹0.00</span>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+                  <div>
+                    <label class="form-label required" style="font-size:12px;">Paid Amount (₹)</label>
+                    <input type="number" id="patient-paid" class="form-control" value="0" style="font-weight:700;" oninput="this.dataset.autoFilled='false'; window.app.recalculateBillingTotals();">
+                  </div>
+                  <div>
+                    <label class="form-label required" style="font-size:12px;">Payment Mode</label>
+                    <select id="patient-payment-mode" class="form-control" style="font-weight:600;">
+                      <option value="Cash">Cash</option>
+                      <option value="UPI / QR">UPI / QR Code</option>
+                      <option value="Card">Debit/Credit Card</option>
+                      <option value="Net Banking">Net Banking</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Live Balance Due preview -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding:7px 10px; background:#fff; border:1px solid #e2e8f0; border-radius:6px; font-size:12.5px;">
+                  <span style="font-weight:600; color:#475569;">Balance Due / Outstanding:</span>
+                  <span id="bill-summary-due" style="font-weight:700; color:#16a34a;">₹0.00 (Fully Paid)</span>
+                </div>
+
+                <!-- Save & Register Button -->
+                <div style="margin-top:14px;">
+                  <button class="btn btn-success" style="width:100%; padding:11px 16px; font-size:14.5px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="window.app.submitNewPatient()">
+                    <span>✓</span> Save & Register Patient
+                  </button>
+                </div>
+
+              </div>
+
             </div>
 
           </div>
