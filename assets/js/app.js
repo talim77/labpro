@@ -12,6 +12,9 @@ class AppController {
   async init(pageName = 'dashboard') {
     this.currentPage = pageName;
 
+    // Initialize Service Worker for 100% Offline caching & PWA install support
+    this.initServiceWorker();
+
     // Initialize DB
     await window.labDB.init();
 
@@ -56,6 +59,7 @@ class AppController {
   }
 
   updateLabHeaderUI() {
+    this.ensureOfflineStatusBadge();
     const lab = window.authManager.currentLab;
     const user = window.authManager.currentUser;
 
@@ -2476,6 +2480,118 @@ class AppController {
       toast.style.opacity = '0';
       setTimeout(() => toast.remove(), 300);
     }, 3500);
+  }
+
+  initServiceWorker() {
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => {
+            console.log('[LabPro SW] Registered successfully with scope:', reg.scope);
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              if (installingWorker) {
+                installingWorker.onstatechange = () => {
+                  if (installingWorker.state === 'installed') {
+                    if (navigator.serviceWorker.controller) {
+                      console.log('[LabPro SW] Updated version available on next visit.');
+                    } else {
+                      console.log('[LabPro SW] All application files successfully cached for 100% offline use.');
+                      this.showToast('LabPro offline ke liye ready ho gaya hai (100% Cached)!', 'success');
+                    }
+                  }
+                };
+              }
+            };
+          })
+          .catch((err) => {
+            console.warn('[LabPro SW] Registration failed:', err);
+          });
+      });
+    }
+
+    // Monitor network status changes
+    window.addEventListener('online', () => this.updateOfflineStatusUI(true));
+    window.addEventListener('offline', () => this.updateOfflineStatusUI(false));
+
+    // Handle PWA install prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      window.deferredInstallPrompt = e;
+      const installBtns = document.querySelectorAll('.btn-pwa-install');
+      installBtns.forEach(btn => {
+        btn.style.display = 'inline-flex';
+      });
+    });
+
+    window.addEventListener('appinstalled', () => {
+      window.deferredInstallPrompt = null;
+      const installBtns = document.querySelectorAll('.btn-pwa-install');
+      installBtns.forEach(btn => {
+        btn.style.display = 'none';
+      });
+      this.showToast('LabPro Desktop App successfully install ho gaya!', 'success');
+    });
+  }
+
+  ensureOfflineStatusBadge() {
+    const topbarRight = document.querySelector('.topbar-right');
+    if (topbarRight && !document.querySelector('.ui-offline-status-badge')) {
+      const badge = document.createElement('span');
+      badge.className = 'badge badge-success ui-offline-status-badge';
+      badge.style.display = 'inline-flex';
+      badge.style.alignItems = 'center';
+      badge.style.fontSize = '12px';
+      badge.style.padding = '5px 10px';
+      badge.style.marginRight = '6px';
+      topbarRight.insertBefore(badge, topbarRight.firstChild);
+
+      const installBtn = document.createElement('button');
+      installBtn.className = 'btn btn-outline btn-sm btn-pwa-install';
+      installBtn.style.display = window.deferredInstallPrompt ? 'inline-flex' : 'none';
+      installBtn.style.alignItems = 'center';
+      installBtn.style.gap = '4px';
+      installBtn.style.padding = '5px 10px';
+      installBtn.style.marginRight = '6px';
+      installBtn.innerHTML = '📥 Install App';
+      installBtn.onclick = () => this.installPwa();
+      topbarRight.insertBefore(installBtn, topbarRight.children[1]);
+    }
+    this.updateOfflineStatusUI(navigator.onLine);
+  }
+
+  updateOfflineStatusUI(isOnline) {
+    const badges = document.querySelectorAll('.ui-offline-status-badge');
+    badges.forEach(badge => {
+      if (isOnline) {
+        badge.innerHTML = `<span style="display:inline-block; width:8px; height:8px; background:#10b981; border-radius:50%; margin-right:6px;"></span>Online (Ready)`;
+        badge.className = 'badge badge-success ui-offline-status-badge';
+        badge.style.background = '#f0fdf4';
+        badge.style.color = '#15803d';
+        badge.style.border = '1px solid #bbf7d0';
+        badge.title = 'Internet Connected: App is cached and ready for offline use.';
+      } else {
+        badge.innerHTML = `<span style="display:inline-block; width:8px; height:8px; background:#f59e0b; border-radius:50%; margin-right:6px;"></span>100% Offline Mode`;
+        badge.className = 'badge badge-warning ui-offline-status-badge';
+        badge.style.background = '#fffbeb';
+        badge.style.color = '#b45309';
+        badge.style.border = '1px solid #fde68a';
+        badge.title = 'No Internet: Running entirely from local browser cache and IndexedDB.';
+      }
+    });
+  }
+
+  async installPwa() {
+    if (window.deferredInstallPrompt) {
+      window.deferredInstallPrompt.prompt();
+      const choiceResult = await window.deferredInstallPrompt.userChoice;
+      if (choiceResult && choiceResult.outcome === 'accepted') {
+        console.log('[LabPro] User installed PWA');
+      }
+      window.deferredInstallPrompt = null;
+    } else {
+      alert('LabPro desktop app install karne ke liye browser address bar ya menu me "Install LabPro" icon par click karein.');
+    }
   }
 
   setupEventListeners() {

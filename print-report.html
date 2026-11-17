@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lab Examination Report - Print & PDF</title>
+  <meta name="theme-color" content="#0284c7">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
   <link rel="stylesheet" href="assets/css/style.css?v=2.1">
   <link rel="stylesheet" href="assets/css/print.css?v=2.1">
   <script src="assets/vendor/html2pdf.bundle.min.js"></script>
@@ -432,6 +436,9 @@
     }
 
     function initReport() {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.warn('[LabPro SW] Print page reg err:', err));
+      }
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', loadReport);
       } else {
