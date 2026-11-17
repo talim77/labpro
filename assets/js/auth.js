@@ -1,7 +1,8 @@
 /**
  * Offline Lab Management System - Auth & Permissions Manager
  * Persistent across multiple HTML pages via localStorage.
- * Auto-seeds default Lab Profile and Admin if empty, so the system is immediately ready to use.
+ * Zero hardcoded or default logged-in accounts.
+ * Prompts fresh setup if database has no registered lab.
  */
 
 class AuthManager {
@@ -15,90 +16,76 @@ class AuthManager {
 
     // Check if any lab exists
     let labs = await window.labDB.getAll('lab_profiles');
-    
-    // Auto-seed default Lab Profile if empty
-    if (!labs || labs.length === 0) {
-      const defaultLab = {
-        id: 'lab_default',
-        name: 'City Diagnostics & Clinical Lab',
-        tagline: 'Computerized Pathology & Diagnostic Centre',
-        address: 'Near Civil Hospital, Station Road',
-        phone: '+91 98765 43210',
-        email: 'citylab@example.com',
-        regNo: 'REG/PATH/2026/104',
-        technologistName: 'R. K. Verma (DMLT)',
-        pathologistName: 'Dr. S. K. Gupta (MD Pathologist)',
-        letterheadTopMargin: 50,
-        logoBase64: '',
-        createdAt: new Date().toISOString()
-      };
-      await window.labDB.add('lab_profiles', defaultLab);
 
-      // Create Default Admin
-      const defaultAdmin = {
-        id: 'usr_admin',
-        labId: 'lab_default',
-        name: 'Dr. S. K. Gupta (Admin)',
-        username: 'admin',
-        pin: '1234',
-        pinHash: await this.hashPin('1234'),
-        phone: '9876543210',
-        role: 'admin',
-        isActivated: true,
-        permissions: {
-          canChangeTestRate: true,
-          canEditTest: true,
-          canDeleteTest: true,
-          canEditDoctor: true,
-          canDeleteDoctor: true
-        },
-        active: true,
-        createdAt: new Date().toISOString()
-      };
-      await window.labDB.add('users', defaultAdmin);
-
-      // Seed Default Referral Doctors
-      const defaultDoctors = [
-        { id: 'doc_1', labId: 'lab_default', name: 'Dr. A. K. Sharma', degree: 'MBBS, MD (Medicine)', hospital: 'Sharma Clinic', phone: '9812345671', commissionRate: 15, createdAt: new Date().toISOString() },
-        { id: 'doc_2', labId: 'lab_default', name: 'Dr. Meena Patel', degree: 'MBBS, DGO', hospital: 'Patel Nursing Home', phone: '9812345672', commissionRate: 20, createdAt: new Date().toISOString() },
-        { id: 'doc_3', labId: 'lab_default', name: 'Dr. Rajesh Verma', degree: 'BAMS', hospital: 'Verma Health Care', phone: '9812345673', commissionRate: 10, createdAt: new Date().toISOString() }
-      ];
-      for (const doc of defaultDoctors) {
-        await window.labDB.add('doctors', doc);
+    // Clean up old default dummy demo lab ('lab_default') if present without real user patients
+    if (labs && labs.some(l => l.id === 'lab_default')) {
+      const defaultPatients = await window.labDB.getAll('patients', p => p.labId === 'lab_default');
+      if (!defaultPatients || defaultPatients.length === 0) {
+        try {
+          await window.labDB.delete('lab_profiles', 'lab_default');
+          const defaultUsers = await window.labDB.getAll('users', u => u.labId === 'lab_default');
+          for (const u of defaultUsers) {
+            await window.labDB.delete('users', u.id);
+          }
+          const defaultDocs = await window.labDB.getAll('doctors', d => d.labId === 'lab_default');
+          for (const d of defaultDocs) {
+            await window.labDB.delete('doctors', d.id);
+          }
+          const defaultTests = await window.labDB.getAll('test_catalog', t => t.labId === 'lab_default');
+          for (const t of defaultTests) {
+            await window.labDB.delete('test_catalog', t.id);
+          }
+        } catch (e) {
+          console.warn('Error clearing default demo lab records:', e);
+        }
+        localStorage.removeItem('active_user_lab_default');
+        if (localStorage.getItem('active_lab_id') === 'lab_default') {
+          localStorage.removeItem('active_lab_id');
+        }
+        labs = labs.filter(l => l.id !== 'lab_default');
       }
+    }
 
-      // Seed Default Tests
-      await window.testCatalogManager.ensureDefaultTests('lab_default');
-
-      labs = [defaultLab];
+    // If no labs exist at all -> Prompt first-time fresh lab setup
+    if (!labs || labs.length === 0) {
+      this.currentLab = null;
+      this.currentUser = null;
+      localStorage.removeItem('active_lab_id');
+      return { needsLabSetup: true, currentLab: null, currentUser: null };
     }
 
     // Load active lab ID
-    const savedLabId = localStorage.getItem('active_lab_id') || labs[0].id;
+    const savedLabId = localStorage.getItem('active_lab_id');
     this.currentLab = labs.find(l => l.id === savedLabId) || labs[0];
     localStorage.setItem('active_lab_id', this.currentLab.id);
 
-    // Make sure default tests exist
-    await window.testCatalogManager.ensureDefaultTests(this.currentLab.id);
+    // Make sure default tests exist for active lab
+    if (window.testCatalogManager) {
+      await window.testCatalogManager.ensureDefaultTests(this.currentLab.id);
+    }
 
-    // Load active user session from localStorage (persists across HTML pages!)
+    // Load active user session from localStorage (only if previously logged in)
     const savedUserJson = localStorage.getItem('active_user_' + this.currentLab.id);
     if (savedUserJson) {
       try {
-        this.currentUser = JSON.parse(savedUserJson);
+        const parsed = JSON.parse(savedUserJson);
+        const userInDb = await window.labDB.get('users', parsed.id);
+        if (userInDb && userInDb.active && userInDb.labId === this.currentLab.id) {
+          this.currentUser = userInDb;
+        } else {
+          this.currentUser = null;
+          localStorage.removeItem('active_user_' + this.currentLab.id);
+        }
       } catch (e) {
         this.currentUser = null;
+        localStorage.removeItem('active_user_' + this.currentLab.id);
       }
+    } else {
+      this.currentUser = null;
     }
 
-    // Default to main Admin if not explicitly logged in
-    if (!this.currentUser) {
-      const users = await window.labDB.getAll('users', u => u.labId === this.currentLab.id && u.active);
-      this.currentUser = users.find(u => u.role === 'admin') || users[0];
-      if (this.currentUser) {
-        localStorage.setItem('active_user_' + this.currentLab.id, JSON.stringify(this.currentUser));
-      }
-    }
+    // STRICT RULE: DO NOT AUTO-LOGIN!
+    // If not logged in, this.currentUser remains null.
 
     return { needsLabSetup: false, currentLab: this.currentLab, currentUser: this.currentUser };
   }
@@ -108,15 +95,15 @@ class AuthManager {
     const labId = 'lab_' + Math.random().toString(36).substr(2, 9);
     const newLab = {
       id: labId,
-      name: labData.name,
-      tagline: labData.tagline || 'Clinical Pathology & Diagnostic Centre',
-      address: labData.address || '',
-      phone: labData.phone || '',
-      email: labData.email || '',
-      regNo: labData.regNo || '',
-      technologistName: labData.technologistName || 'Lab Technician (DMLT)',
-      pathologistName: labData.pathologistName || 'Consultant Pathologist (MD)',
-      letterheadTopMargin: labData.letterheadTopMargin || 50,
+      name: (labData.name || 'Pathology Lab').trim(),
+      tagline: (labData.tagline || 'Clinical Pathology & Diagnostic Centre').trim(),
+      address: (labData.address || '').trim(),
+      phone: (labData.phone || '').trim(),
+      email: (labData.email || '').trim(),
+      regNo: (labData.regNo || '').trim(),
+      technologistName: (labData.technologistName || 'Lab Technician (DMLT)').trim(),
+      pathologistName: (labData.pathologistName || 'Consultant Pathologist (MD)').trim(),
+      letterheadTopMargin: parseInt(labData.letterheadTopMargin) || 50,
       logoBase64: labData.logoBase64 || '',
       createdAt: new Date().toISOString()
     };
@@ -128,8 +115,9 @@ class AuthManager {
     const adminUser = {
       id: adminId,
       labId: labId,
-      name: adminData.name || 'Lab Admin',
+      name: (adminData.name || 'Lab Admin').trim(),
       username: adminData.username.toLowerCase().trim(),
+      phone: (adminData.phone || labData.phone || '').trim(),
       pin: adminData.pin.trim(),
       pinHash: await this.hashPin(adminData.pin.trim()),
       role: 'admin',
@@ -146,14 +134,22 @@ class AuthManager {
     };
 
     await window.labDB.add('users', adminUser);
-    await window.testCatalogManager.ensureDefaultTests(labId);
+    
+    // Auto-seed default tests with standard reference ranges
+    if (window.testCatalogManager) {
+      await window.testCatalogManager.ensureDefaultTests(labId);
+    }
 
     this.currentLab = newLab;
     this.currentUser = adminUser;
     localStorage.setItem('active_lab_id', labId);
-    localStorage.setItem('active_user_' + labId, JSON.stringify(adminUser));
 
-    return { lab: newLab, user: adminUser };
+    const safeUser = { ...adminUser };
+    delete safeUser.pin;
+    delete safeUser.pinHash;
+    localStorage.setItem('active_user_' + labId, JSON.stringify(safeUser));
+
+    return { lab: newLab, user: safeUser };
   }
 
   // Switch to another lab

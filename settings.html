@@ -82,7 +82,7 @@
             <div id="ui-user-name" style="font-weight:700; font-size:13px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Admin</div>
             <span id="ui-user-role" class="role-pill admin">ADMIN</span>
           </div>
-          <button class="btn btn-outline btn-sm" style="color:#cbd5e1; border-color:#334155; padding:4px 8px;" onclick="window.app.logout()" title="Logout">
+          <button class="btn btn-outline btn-sm" id="btn-sidebar-auth" style="color:#cbd5e1; border-color:#334155; padding:4px 8px;" onclick="window.app.handleAuthClick()" title="Logout / Login">
             Logout
           </button>
         </div>
@@ -98,6 +98,9 @@
           <h1 class="page-title">Lab Profile Settings & Local Backup</h1>
         </div>
         <div class="topbar-right">
+          <button class="btn btn-outline btn-sm" onclick="window.app.openCreateLabModal(false)" title="Setup a fresh new Lab Account">
+            ➕ New Lab Setup
+          </button>
           <button class="btn btn-outline btn-sm" onclick="window.app.openSwitchLabModal()" title="Switch or Create another Lab Account">
             🏢 Switch Lab Account
           </button>

@@ -16,13 +16,24 @@ class AppController {
     await window.labDB.init();
 
     // Check Auth & Lab Profile
-    await window.authManager.init();
+    const authStatus = await window.authManager.init();
 
     // Ensure all common modals exist in DOM
     this.ensureCommonModals();
 
-    // Update UI headers
+    // Update UI headers & sidebar auth button
     this.updateLabHeaderUI();
+
+    // If no lab exists at all -> force first-time Lab Setup
+    if (authStatus.needsLabSetup || !window.authManager.currentLab) {
+      this.openCreateLabModal(true);
+      return;
+    }
+
+    // If lab exists but user is not logged in -> prompt login
+    if (!window.authManager.currentUser) {
+      this.openLoginModal();
+    }
 
     // Initialize specific page
     if (pageName === 'dashboard') {
@@ -48,27 +59,64 @@ class AppController {
     const lab = window.authManager.currentLab;
     const user = window.authManager.currentUser;
 
+    const nameEl = document.getElementById('ui-lab-name');
+    const tagEl = document.getElementById('ui-lab-tagline');
+    const userEl = document.getElementById('ui-user-name');
+    const rolePill = document.getElementById('ui-user-role');
+    const authBtn = document.getElementById('btn-sidebar-auth');
+
     if (lab) {
-      const nameEl = document.getElementById('ui-lab-name');
-      const tagEl = document.getElementById('ui-lab-tagline');
       if (nameEl) nameEl.innerText = lab.name;
       if (tagEl) tagEl.innerText = lab.tagline || 'Diagnostics';
       document.title = `${lab.name} - Lab Management`;
+    } else {
+      if (nameEl) nameEl.innerText = 'Pathology Lab System';
+      if (tagEl) tagEl.innerText = 'Setup Required';
+      document.title = `Setup Lab - Lab Management`;
     }
 
     if (user) {
-      const userEl = document.getElementById('ui-user-name');
-      const rolePill = document.getElementById('ui-user-role');
       if (userEl) userEl.innerText = user.name;
       if (rolePill) {
         rolePill.innerText = user.role.toUpperCase();
         rolePill.className = `role-pill ${user.role}`;
+        rolePill.style.background = '';
+        rolePill.style.color = '';
+        rolePill.style.display = '';
+      }
+      if (authBtn) {
+        authBtn.innerText = 'Logout';
+        authBtn.className = 'btn btn-outline btn-sm';
+        authBtn.style.color = '#cbd5e1';
+        authBtn.style.borderColor = '#334155';
+        authBtn.title = 'Logout from current session';
       }
 
       // Hide Admin-only menu items for staff
       const adminOnlyElements = document.querySelectorAll('.admin-only');
       adminOnlyElements.forEach(el => {
         el.style.display = user.role === 'admin' ? '' : 'none';
+      });
+    } else {
+      if (userEl) userEl.innerText = 'Not Logged In';
+      if (rolePill) {
+        rolePill.innerText = 'LOGIN REQUIRED';
+        rolePill.className = 'role-pill';
+        rolePill.style.background = '#fef3c7';
+        rolePill.style.color = '#92400e';
+        rolePill.style.display = '';
+      }
+      if (authBtn) {
+        authBtn.innerText = '🔑 Login';
+        authBtn.className = 'btn btn-primary btn-sm';
+        authBtn.style.color = '#fff';
+        authBtn.style.borderColor = '';
+        authBtn.title = 'Login to system';
+      }
+
+      const adminOnlyElements = document.querySelectorAll('.admin-only');
+      adminOnlyElements.forEach(el => {
+        el.style.display = 'none';
       });
     }
   }
@@ -81,7 +129,7 @@ class AppController {
       modal.className = 'modal-backdrop';
       modal.id = 'modal-login';
       modal.innerHTML = `
-        <div class="modal-dialog" style="max-width:420px;">
+        <div class="modal-dialog" style="max-width:440px;">
           <div class="modal-header">
             <div>
               <h3 style="margin:0;">Lab Login</h3>
@@ -90,21 +138,39 @@ class AppController {
             <button class="modal-close" onclick="window.app.closeModal('modal-login')">&times;</button>
           </div>
           <div class="modal-body">
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 12px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <span style="font-size:10.5px; text-transform:uppercase; color:#64748b; font-weight:700; display:block;">Current Lab</span>
+                <strong id="login-active-lab-name" style="font-size:13.5px; color:#0f172a;">--</strong>
+              </div>
+              <button type="button" class="btn btn-outline btn-sm" onclick="window.app.openSwitchLabModal()" style="font-size:11px; padding:3px 8px;">
+                🏢 Switch Lab
+              </button>
+            </div>
+
             <div class="form-group">
-              <label class="form-label required">Select Active Account</label>
-              <select id="login-user-select" class="form-control"></select>
+              <label class="form-label required">Select Account / User</label>
+              <select id="login-user-select" class="form-control" style="font-weight:600;"></select>
             </div>
             <div class="form-group">
               <label class="form-label required">4-Digit Security PIN</label>
-              <input type="password" id="login-pin-input" class="form-control" maxlength="6" placeholder="Enter PIN">
+              <input type="password" id="login-pin-input" class="form-control" maxlength="6" placeholder="Enter PIN" style="font-size:18px; font-weight:800; letter-spacing:4px; text-align:center;">
             </div>
-            <button class="btn btn-primary" style="width:100%; margin-top:8px;" onclick="window.app.performLogin()">
-              Login to System
+            <button class="btn btn-primary" style="width:100%; margin-top:8px; padding:10px; font-weight:700;" onclick="window.app.performLogin()">
+              🔑 Login to System
             </button>
 
+            <!-- Fresh New Lab Setup Action -->
+            <div style="margin-top:16px; padding-top:14px; border-top:1px solid #e2e8f0; text-align:center;">
+              <span style="display:block; font-size:12px; color:#64748b; margin-bottom:8px;">Naya Lab ya Naya Account setup karna chahte hain?</span>
+              <button type="button" class="btn btn-success" style="width:100%; font-weight:700; padding:9px;" onclick="window.app.openCreateLabModal(false)">
+                ➕ Setup New Lab Account (Naya Lab Banayein)
+              </button>
+            </div>
+
             <!-- Two-Step Staff Setup & Activation Trigger -->
-            <div style="margin-top:16px; padding-top:14px; border-top:1px dashed #cbd5e1; text-align:center;">
-              <span style="display:block; font-size:12px; color:#64748b; margin-bottom:6px;">First time here as Staff?</span>
+            <div style="margin-top:12px; padding-top:12px; border-top:1px dashed #cbd5e1; text-align:center;">
+              <span style="display:block; font-size:11.5px; color:#64748b; margin-bottom:6px;">Staff Member? Pehli baar PIN setup ke liye:</span>
               <button type="button" class="btn btn-outline btn-sm" style="width:100%; color:#0284c7; border-color:#0284c7; font-weight:600;" onclick="window.app.openStaffActivationModal()">
                 🔑 Activate Staff Account (Set Your Private PIN)
               </button>
@@ -206,8 +272,8 @@ class AppController {
           </div>
           <div class="modal-body">
             <div id="switch-lab-list-container" style="margin-bottom:16px;"></div>
-            <button class="btn btn-outline" style="width:100%;" onclick="window.app.openCreateLabModal()">
-              ➕ Create Another New Lab Account
+            <button class="btn btn-success" style="width:100%; font-weight:700;" onclick="window.app.openCreateLabModal(false)">
+              ➕ Setup New Lab Account (Naya Lab Banayein)
             </button>
           </div>
         </div>
@@ -215,44 +281,108 @@ class AppController {
       document.body.appendChild(modal);
     }
 
-    // 3. Create New Lab Modal
+    // 3. Create / Setup New Lab Modal
     if (!document.getElementById('modal-create-lab')) {
       const modal = document.createElement('div');
       modal.className = 'modal-backdrop';
       modal.id = 'modal-create-lab';
       modal.innerHTML = `
-        <div class="modal-dialog" style="max-width:500px;">
+        <div class="modal-dialog" style="max-width:560px;">
           <div class="modal-header">
-            <h3>Create New Lab Account</h3>
-            <button class="modal-close" onclick="window.app.closeModal('modal-create-lab')">&times;</button>
+            <div>
+              <h3 id="create-lab-title" style="margin:0;">🔬 Fresh Lab Setup & New Account</h3>
+              <span id="create-lab-subtitle" style="font-size:12px; color:#64748b;">Set up your Pathology / Diagnostic Lab in seconds</span>
+            </div>
+            <button class="modal-close" id="btn-close-create-lab" onclick="window.app.closeModal('modal-create-lab')">&times;</button>
           </div>
-          <div class="modal-body">
+          <div class="modal-body" style="max-height:76vh; overflow-y:auto; padding:18px 22px;">
+            
+            <!-- Welcome Note for First Time -->
+            <div id="first-time-welcome-box" style="display:none; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:12px; margin-bottom:16px; font-size:12.5px; color:#1e40af; line-height:1.5;">
+              👋 <strong>Welcome to Pathology Lab Management System!</strong><br>
+              Koi bhi default account logged in nahi hai. Kripya niche apne Lab aur Admin account ki details bharkar turant apna fresh setup karein:
+            </div>
+
+            <!-- SECTION 1: LAB INFORMATION -->
+            <div style="font-size:13px; font-weight:700; color:#0284c7; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; border-bottom:2px solid #e0f2fe; padding-bottom:4px;">
+              1. Lab Profile Details
+            </div>
+
             <div class="form-group">
               <label class="form-label required">Lab Name</label>
-              <input type="text" id="new-lab-name" class="form-control" placeholder="e.g. LifeCare Pathology Lab">
+              <input type="text" id="new-lab-name" class="form-control" placeholder="e.g. LifeCare Pathology & Diagnostic Centre" required style="font-weight:600;">
             </div>
+
             <div class="form-group">
-              <label class="form-label">Address</label>
-              <input type="text" id="new-lab-address" class="form-control" placeholder="e.g. Near City Hospital">
+              <label class="form-label">Lab Tagline / Subtitle</label>
+              <input type="text" id="new-lab-tagline" class="form-control" placeholder="e.g. Computerized Pathology & Diagnostic Centre">
             </div>
-            <div class="form-group">
-              <label class="form-label">Phone</label>
-              <input type="text" id="new-lab-phone" class="form-control" placeholder="e.g. 9876543210">
-            </div>
+
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
               <div class="form-group">
-                <label class="form-label required">Admin Username</label>
-                <input type="text" id="new-admin-user" class="form-control" value="admin">
+                <label class="form-label">Phone / Mobile No.</label>
+                <input type="tel" id="new-lab-phone" class="form-control" placeholder="e.g. +91 98765 43210">
               </div>
               <div class="form-group">
-                <label class="form-label required">Admin PIN</label>
-                <input type="password" id="new-admin-pin" class="form-control" placeholder="e.g. 1234">
+                <label class="form-label">Lab Reg. / License No.</label>
+                <input type="text" id="new-lab-regno" class="form-control" placeholder="e.g. REG/2026/89">
               </div>
             </div>
+
+            <div class="form-group">
+              <label class="form-label">Lab Address</label>
+              <input type="text" id="new-lab-address" class="form-control" placeholder="e.g. Near City Hospital, Station Road">
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+              <div class="form-group">
+                <label class="form-label">Pathologist / Doctor Name</label>
+                <input type="text" id="new-lab-pathologist" class="form-control" placeholder="e.g. Dr. S. K. Verma (MD)">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Technologist Name</label>
+                <input type="text" id="new-lab-technologist" class="form-control" placeholder="e.g. R. K. Sharma (DMLT)">
+              </div>
+            </div>
+
+            <!-- SECTION 2: ADMIN USER ACCOUNT -->
+            <div style="font-size:13px; font-weight:700; color:#0284c7; text-transform:uppercase; letter-spacing:0.5px; margin-top:16px; margin-bottom:10px; border-bottom:2px solid #e0f2fe; padding-bottom:4px;">
+              2. Admin / Owner Account Credentials
+            </div>
+
+            <div class="form-group">
+              <label class="form-label required">Admin Full Name</label>
+              <input type="text" id="new-admin-name" class="form-control" placeholder="e.g. Dr. Ramesh Kumar" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label required">Admin Login Username</label>
+              <input type="text" id="new-admin-user" class="form-control" placeholder="e.g. admin or mobile number" required style="font-weight:600;">
+              <span style="font-size:11px; color:#64748b;">Future me is username ya mobile number se aap login karenge.</span>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:8px;">
+              <div class="form-group">
+                <label class="form-label required">Create 4-Digit Security PIN</label>
+                <input type="password" id="new-admin-pin" class="form-control" maxlength="6" placeholder="••••" required style="font-size:18px; font-weight:800; letter-spacing:4px; text-align:center;">
+              </div>
+              <div class="form-group">
+                <label class="form-label required">Confirm 4-Digit PIN</label>
+                <input type="password" id="new-admin-pin-confirm" class="form-control" maxlength="6" placeholder="••••" required style="font-size:18px; font-weight:800; letter-spacing:4px; text-align:center;">
+              </div>
+            </div>
+
+            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:10px; margin-top:12px; font-size:12px; color:#15803d; display:flex; align-items:center; gap:8px;">
+              <span>✓</span>
+              <div>Standard pathology test catalog (CBC, Blood Sugar, Lipid, LFT, KFT, Urine R/M, etc.) will be automatically configured with normal biological reference ranges.</div>
+            </div>
+
           </div>
-          <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="window.app.closeModal('modal-create-lab')">Cancel</button>
-            <button class="btn btn-primary" onclick="window.app.createNewLabFromModal()">Create Lab</button>
+          <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+            <button class="btn btn-secondary" id="btn-cancel-create-lab" onclick="window.app.closeModal('modal-create-lab')">Cancel</button>
+            <button class="btn btn-primary" style="padding:9px 18px; font-weight:700;" onclick="window.app.createNewLabFromModal()">
+              🚀 Complete Setup & Start Using Lab
+            </button>
           </div>
         </div>
       `;
@@ -443,6 +573,9 @@ class AppController {
 
   async saveQuickDoctor() {
     try {
+      if (!window.authManager.currentLab) {
+        throw new Error('Kripya pehle Lab Setup karein.');
+      }
       const name = document.getElementById('quick-doc-name-input').value.trim();
       const degree = document.getElementById('quick-doc-degree-input').value.trim();
       const hospital = document.getElementById('quick-doc-hospital-input').value.trim();
@@ -546,6 +679,19 @@ class AppController {
 
   async submitNewPatient() {
     try {
+      const lab = window.authManager.currentLab;
+      if (!lab) {
+        this.showToast('Kripya pehle apna Lab Setup karein.', 'warning');
+        this.openCreateLabModal(true);
+        return;
+      }
+      const user = window.authManager.currentUser;
+      if (!user) {
+        this.showToast('Billing ke liye kripya pehle Login karein.', 'warning');
+        this.openLoginModal();
+        return;
+      }
+
       const name = document.getElementById('patient-name').value.trim();
       const age = document.getElementById('patient-age').value.trim();
       const ageUnit = document.getElementById('patient-age-unit').value;
@@ -571,8 +717,7 @@ class AppController {
       const paidAmount = parseFloat(document.getElementById('patient-paid').value) || 0;
       const paymentMode = document.getElementById('patient-payment-mode').value;
 
-      const user = window.authManager.currentUser;
-      const labId = window.authManager.currentLab.id;
+      const labId = lab.id;
 
       const formData = {
         name, age, ageUnit, gender, phone, address,
@@ -1758,7 +1903,11 @@ class AppController {
 
   async saveLabSettings() {
     try {
+      if (!window.authManager.isAdmin()) {
+        throw new Error('Lab Profile badalne ke liye Admin login zaroori hai.');
+      }
       const lab = window.authManager.currentLab;
+      if (!lab) throw new Error('Koi Lab select nahi hai.');
       lab.name = document.getElementById('setting-lab-name').value.trim();
       lab.tagline = document.getElementById('setting-lab-tagline').value.trim();
       lab.address = document.getElementById('setting-lab-address').value.trim();
@@ -1889,17 +2038,21 @@ class AppController {
     const activeId = window.authManager.currentLab?.id;
 
     if (container) {
-      container.innerHTML = labs.map(l => `
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border:1px solid #e2e8f0; border-radius:6px; margin-bottom:8px; background:${l.id === activeId ? '#e0f2fe' : '#fff'};">
-          <div>
-            <strong>${l.name}</strong>
-            <span style="display:block; font-size:11px; color:#64748b;">${l.address || 'Local PC'}</span>
+      if (!labs || labs.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:15px; color:#64748b;">No Lab Accounts registered yet.</div>';
+      } else {
+        container.innerHTML = labs.map(l => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:11px 13px; border:1px solid ${l.id === activeId ? '#0284c7' : '#e2e8f0'}; border-radius:6px; margin-bottom:8px; background:${l.id === activeId ? '#f0f9ff' : '#fff'};">
+            <div>
+              <strong style="display:block; font-size:13.5px; color:#0f172a;">${l.name}</strong>
+              <span style="font-size:11px; color:#64748b;">${l.address || l.phone || 'ID: ' + l.id}</span>
+            </div>
+            ${l.id === activeId ? `<span class="badge badge-info" style="font-weight:700;">Active Lab</span>` : `
+              <button class="btn btn-outline btn-sm" onclick="window.app.switchLabAccount('${l.id}')">Switch to this Lab</button>
+            `}
           </div>
-          ${l.id === activeId ? `<span class="badge badge-info">Active</span>` : `
-            <button class="btn btn-outline btn-sm" onclick="window.app.switchLabAccount('${l.id}')">Switch</button>
-          `}
-        </div>
-      `).join('');
+        `).join('');
+      }
     }
 
     this.showModal('modal-switch-lab');
@@ -1910,31 +2063,112 @@ class AppController {
     window.location.reload();
   }
 
-  openCreateLabModal() {
+  openLoginModal() {
+    const lab = window.authManager.currentLab;
+    if (!lab) {
+      this.openCreateLabModal(true);
+      return;
+    }
+    this.populateLoginUsers();
+    const pinInput = document.getElementById('login-pin-input');
+    if (pinInput) pinInput.value = '';
+    this.showModal('modal-login');
+  }
+
+  openCreateLabModal(isFirstTime = false) {
     this.closeModal('modal-switch-lab');
+    this.closeModal('modal-login');
+
+    const welcomeBox = document.getElementById('first-time-welcome-box');
+    const closeBtn = document.getElementById('btn-close-create-lab');
+    const cancelBtn = document.getElementById('btn-cancel-create-lab');
+
+    const needsFirstTime = isFirstTime || !window.authManager.currentLab;
+
+    if (welcomeBox) welcomeBox.style.display = needsFirstTime ? 'block' : 'none';
+    if (closeBtn) closeBtn.style.display = needsFirstTime ? 'none' : 'block';
+    if (cancelBtn) cancelBtn.style.display = needsFirstTime ? 'none' : 'inline-block';
+
+    const clearEl = (id, val = '') => {
+      const el = document.getElementById(id);
+      if (el) el.value = val;
+    };
+    clearEl('new-lab-name');
+    clearEl('new-lab-tagline', 'Clinical Pathology & Diagnostic Centre');
+    clearEl('new-lab-phone');
+    clearEl('new-lab-regno');
+    clearEl('new-lab-address');
+    clearEl('new-lab-pathologist');
+    clearEl('new-lab-technologist');
+    clearEl('new-admin-name');
+    clearEl('new-admin-user', 'admin');
+    clearEl('new-admin-pin');
+    clearEl('new-admin-pin-confirm');
+
     this.showModal('modal-create-lab');
   }
 
   async createNewLabFromModal() {
-    const name = document.getElementById('new-lab-name').value.trim();
-    const address = document.getElementById('new-lab-address').value.trim();
-    const phone = document.getElementById('new-lab-phone').value.trim();
-    const username = document.getElementById('new-admin-user').value.trim();
-    const pin = document.getElementById('new-admin-pin').value.trim();
+    const name = document.getElementById('new-lab-name')?.value.trim();
+    const tagline = document.getElementById('new-lab-tagline')?.value.trim() || 'Clinical Pathology & Diagnostic Centre';
+    const address = document.getElementById('new-lab-address')?.value.trim() || '';
+    const phone = document.getElementById('new-lab-phone')?.value.trim() || '';
+    const regNo = document.getElementById('new-lab-regno')?.value.trim() || '';
+    const pathologistName = document.getElementById('new-lab-pathologist')?.value.trim() || '';
+    const technologistName = document.getElementById('new-lab-technologist')?.value.trim() || '';
 
-    if (!name || !username || !pin) {
-      alert('Lab Name, Username aur Admin PIN zaroor bharein.');
+    const adminName = document.getElementById('new-admin-name')?.value.trim() || 'Lab Admin';
+    const username = document.getElementById('new-admin-user')?.value.trim();
+    const pin = document.getElementById('new-admin-pin')?.value.trim();
+    const pinConfirm = document.getElementById('new-admin-pin-confirm')?.value.trim();
+
+    if (!name) {
+      alert('Kripya Lab ka Name zaroor bharein.');
+      return;
+    }
+    if (!adminName) {
+      alert('Admin Full Name bharna zaroori hai.');
+      return;
+    }
+    if (!username) {
+      alert('Admin Login Username bharna zaroori hai.');
+      return;
+    }
+    if (!pin || pin.length < 4) {
+      alert('Security PIN kam se kam 4-digit ka hona chahiye (jaise: 1234).');
+      return;
+    }
+    if (pinConfirm && pin !== pinConfirm) {
+      alert('PIN aur Confirm PIN match nahi ho rahe hain! Dono same hone chahiye.');
       return;
     }
 
-    await window.authManager.createLabAccount(
-      { name, address, phone },
-      { name: 'Admin (' + name + ')', username, pin }
-    );
+    try {
+      await window.authManager.createLabAccount(
+        { name, tagline, address, phone, regNo, pathologistName, technologistName },
+        { name: adminName, username, pin, phone }
+      );
 
-    this.closeModal('modal-create-lab');
-    this.showToast('Naya Lab Account successfully create ho gaya!', 'success');
-    window.location.reload();
+      this.closeModal('modal-create-lab');
+      this.closeModal('modal-login');
+      this.showToast(`🎉 Naya Lab "${name}" aur Admin account setup ho gaya!`, 'success');
+      this.updateLabHeaderUI();
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } catch (err) {
+      alert('Error creating lab account: ' + err.message);
+    }
+  }
+
+  handleAuthClick() {
+    if (window.authManager.currentUser) {
+      this.logout();
+    } else if (!window.authManager.currentLab) {
+      this.openCreateLabModal(true);
+    } else {
+      this.openLoginModal();
+    }
   }
 
   // --------------------------------------------------------------------------
@@ -1972,11 +2206,24 @@ class AppController {
 
   async populateLoginUsers() {
     const lab = window.authManager.currentLab;
-    if (!lab) return;
+    const labTitle = document.getElementById('login-active-lab-name');
+    if (labTitle) {
+      labTitle.innerText = lab ? lab.name : 'No Lab Selected';
+    }
 
-    const users = await window.labDB.getAll('users', u => u.labId === lab.id && u.active);
     const select = document.getElementById('login-user-select');
     if (!select) return;
+
+    if (!lab) {
+      select.innerHTML = '<option value="">No Lab Selected - Click Setup Below</option>';
+      return;
+    }
+
+    const users = await window.labDB.getAll('users', u => u.labId === lab.id && u.active);
+    if (!users || users.length === 0) {
+      select.innerHTML = '<option value="">No users found in this Lab</option>';
+      return;
+    }
 
     select.innerHTML = users.map(u => {
       const val = u.username || u.phone;
@@ -2008,8 +2255,9 @@ class AppController {
 
   logout() {
     window.authManager.logout();
-    this.showModal('modal-login');
-    this.populateLoginUsers();
+    this.updateLabHeaderUI();
+    this.showToast('Aap logout ho chuke hain.', 'info');
+    this.openLoginModal();
   }
 
   showToast(message, type = 'info') {
