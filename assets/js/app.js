@@ -632,7 +632,30 @@ class AppController {
       `).join('');
     }
 
+    const user = window.authManager.currentUser;
+    const discIndicator = document.getElementById('discount-permission-indicator');
+    if (discIndicator) {
+      if (!user) {
+        discIndicator.innerText = '';
+      } else if (user.role === 'admin') {
+        discIndicator.innerHTML = '<span style="color:#16a34a; font-weight:600;">✓ Admin (Direct Discount Allowed)</span>';
+      } else if (window.authManager.hasPermission('canGiveDiscount')) {
+        discIndicator.innerHTML = '<span style="color:#16a34a; font-weight:600;">✓ Staff Allowed (Admin Permission Granted)</span>';
+      } else {
+        discIndicator.innerHTML = '<span style="color:#b45309; font-weight:600;">🔒 Requires Admin PIN Approval</span>';
+      }
+    }
+
     this.recalculateBillingTotals();
+  }
+
+  filterBillingTests(query) {
+    const q = (query || '').toLowerCase().trim();
+    const cards = document.querySelectorAll('.test-checkbox-card');
+    cards.forEach(card => {
+      const text = card.innerText.toLowerCase();
+      card.style.display = (!q || text.includes(q)) ? 'flex' : 'none';
+    });
   }
 
   async populateDoctorsDropdown(labId, selectDoctorId = null) {
@@ -681,6 +704,11 @@ class AppController {
   }
 
   onTestSelectionChanged() {
+    const checkboxes = document.querySelectorAll('.billing-test-chk:checked');
+    const countEl = document.getElementById('billing-test-selected-count');
+    if (countEl) {
+      countEl.innerText = `${checkboxes.length} selected`;
+    }
     this.recalculateBillingTotals();
   }
 
@@ -746,11 +774,13 @@ class AppController {
       const statusText = document.getElementById('discount-approval-status-text');
       if (user && user.role === 'admin') {
         statusText.innerHTML = `<strong>Admin Privileged:</strong> Aap Admin hain, yeh discount direct apply hoga.`;
+      } else if (user && window.authManager.hasPermission('canGiveDiscount')) {
+        statusText.innerHTML = `<strong style="color:#16a34a;">Staff Discount Allowed:</strong> Admin dwara is staff account ko direct discount dene ki permission prapt hai.`;
       } else if (this.adminApprovalTemp) {
         statusText.innerHTML = `<strong style="color:#16a34a;">Approved by Admin:</strong> ${this.adminApprovalTemp.name} ne yeh discount approve kar diya hai.`;
       } else {
         statusText.innerHTML = `
-          <strong style="color:#b45309;">Staff Restriction:</strong> Discount dene ke liye Admin PIN zaroori hai.
+          <strong style="color:#b45309;">Staff Restriction:</strong> Is staff account ko discount dene ki permission nahi hai. Discount dene ke liye Admin PIN zaroori hai.
           <button type="button" class="btn btn-warning btn-sm" style="margin-left:8px;" onclick="window.app.openAdminPinModal()">Verify Admin PIN</button>
         `;
       }
@@ -807,8 +837,8 @@ class AppController {
         testIds, testNames,
         subtotal,
         discountAmount: discount,
-        adminVerified: user.role === 'admin' || !!this.adminApprovalTemp,
-        adminApprovedByName: this.adminApprovalTemp ? this.adminApprovalTemp.name : null,
+        adminVerified: user.role === 'admin' || window.authManager.hasPermission('canGiveDiscount') || !!this.adminApprovalTemp,
+        adminApprovedByName: this.adminApprovalTemp ? this.adminApprovalTemp.name : (window.authManager.hasPermission('canGiveDiscount') ? user.name + ' (Staff Permission)' : null),
         finalAmount, paidAmount, paymentMode
       };
 
@@ -1496,14 +1526,46 @@ class AppController {
     if (!labId) return;
 
     const tests = await window.testCatalogManager.getTests(labId);
+    this.allCatalogTests = tests;
+    this.filterTestCatalog();
+  }
+
+  filterTestCatalog() {
+    if (!this.allCatalogTests) return;
+    const q = (document.getElementById('test-catalog-search')?.value || '').toLowerCase().trim();
+    const cat = document.getElementById('test-catalog-category-filter')?.value || 'all';
     const tbody = document.getElementById('test-catalog-table-body');
     if (!tbody) return;
+
+    const filtered = this.allCatalogTests.filter(t => {
+      const matchCat = (cat === 'all' || (t.category && t.category.toLowerCase().includes(cat.toLowerCase())));
+      if (!matchCat) return false;
+      if (!q) return true;
+      const matchName = (t.name && t.name.toLowerCase().includes(q));
+      const matchCode = (t.code && t.code.toLowerCase().includes(q));
+      const matchParam = (t.parameters && t.parameters.some(p => p.name && p.name.toLowerCase().includes(q)));
+      return matchName || matchCode || matchParam;
+    });
+
+    const badge = document.getElementById('test-catalog-count-badge');
+    if (badge) {
+      if (filtered.length === this.allCatalogTests.length) {
+        badge.innerText = `Total: ${this.allCatalogTests.length} Tests`;
+      } else {
+        badge.innerText = `Showing ${filtered.length} of ${this.allCatalogTests.length} Tests`;
+      }
+    }
 
     const canChangeRate = window.authManager.hasPermission('canChangeTestRate');
     const canEditTest = window.authManager.hasPermission('canEditTest');
     const canDeleteTest = window.authManager.hasPermission('canDeleteTest');
 
-    tbody.innerHTML = tests.map(t => {
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#64748b;">Koi test match nahi hua. Kripya dusra search keyword try karein.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(t => {
       const rateBtn = canChangeRate
         ? `<button class="btn btn-outline btn-sm" onclick="window.app.editTestPrice('${t.id}')">Rate</button>`
         : `<button class="btn btn-outline btn-sm" style="opacity:0.5; cursor:not-allowed;" title="Rate change restricted by Admin" onclick="window.app.showToast('Rate change restricted: Test rate badalne ki permission sirf Admin dwara allow hone par milti hai.', 'error')">🔒 Rate</button>`;
@@ -1536,6 +1598,20 @@ class AppController {
         </tr>
       `;
     }).join('');
+  }
+
+  async loadStandard50TestsPreset() {
+    const lab = window.authManager.currentLab;
+    if (!lab) return;
+    if (!window.authManager.isAdmin() && !window.authManager.hasPermission('canEditTest')) {
+      this.showToast('Test catalog reset karne ke liye Admin permission zaroori hai.', 'error');
+      return;
+    }
+    if (confirm('Kya aap exact 50 popular Indian routine pathology tests ka complete preset load karna chahte hain?')) {
+      await window.testCatalogManager.resetToDefault50Tests(lab.id);
+      this.showToast('Exact 50 Popular Pathology Tests successfully load ho gaye!', 'success');
+      await this.renderTestCatalogView();
+    }
   }
 
   async editTestPrice(testId) {
@@ -1757,6 +1833,9 @@ class AppController {
         if (p.canDeleteDoctor) badges.push(`<span class="badge badge-success" title="Delete Doctor Allowed">✓ Del Doc</span>`);
         else badges.push(`<span class="badge badge-neutral" style="opacity:0.5;" title="Delete Doctor Denied">✕ Del Doc</span>`);
 
+        if (p.canGiveDiscount) badges.push(`<span class="badge badge-success" style="background:#dbeafe; color:#1e40af; border:1px solid #bfdbfe;" title="Billing Discount Allowed by Admin">✓ Discount</span>`);
+        else badges.push(`<span class="badge badge-neutral" style="opacity:0.5;" title="Billing Discount Denied">✕ Discount</span>`);
+
         permissionsHTML = `<div style="display:flex; gap:4px; flex-wrap:wrap;">${badges.join('')}</div>`;
       }
 
@@ -1805,7 +1884,8 @@ class AppController {
         canEditTest: document.getElementById('staff-perm-test-edit')?.checked || false,
         canDeleteTest: document.getElementById('staff-perm-test-del')?.checked || false,
         canEditDoctor: document.getElementById('staff-perm-doc-edit')?.checked || false,
-        canDeleteDoctor: document.getElementById('staff-perm-doc-del')?.checked || false
+        canDeleteDoctor: document.getElementById('staff-perm-doc-del')?.checked || false,
+        canGiveDiscount: document.getElementById('staff-perm-discount')?.checked || false
       };
 
       await window.authManager.createStaff({ name, phone, permissions });
@@ -1833,6 +1913,7 @@ class AppController {
     document.getElementById('edit-perm-test-del').checked = !!p.canDeleteTest;
     document.getElementById('edit-perm-doc-edit').checked = !!p.canEditDoctor;
     document.getElementById('edit-perm-doc-del').checked = !!p.canDeleteDoctor;
+    document.getElementById('edit-perm-discount').checked = !!p.canGiveDiscount;
 
     this.showModal('modal-edit-staff');
   }
@@ -1851,7 +1932,8 @@ class AppController {
         canEditTest: document.getElementById('edit-perm-test-edit').checked,
         canDeleteTest: document.getElementById('edit-perm-test-del').checked,
         canEditDoctor: document.getElementById('edit-perm-doc-edit').checked,
-        canDeleteDoctor: document.getElementById('edit-perm-doc-del').checked
+        canDeleteDoctor: document.getElementById('edit-perm-doc-del').checked,
+        canGiveDiscount: document.getElementById('edit-perm-discount').checked
       };
 
       const updateData = { name, phone, permissions };

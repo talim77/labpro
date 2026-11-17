@@ -40,10 +40,13 @@ class BillingManager {
       if (currentUser.role === 'admin') {
         discountApproved = true;
         discountApprovedBy = currentUser.name + ' (Admin)';
+      } else if (currentUser.permissions && currentUser.permissions.canGiveDiscount) {
+        discountApproved = true;
+        discountApprovedBy = currentUser.name + ' (Staff Allowed)';
       } else {
         // Must be already verified by admin PIN
         if (!formData.adminVerified) {
-          throw new Error('Staff bina Admin approval ke discount nahi de sakta. Kripya Admin PIN verify karein.');
+          throw new Error('Staff bina Admin approval ke discount nahi de sakta. Kripya Admin PIN verify karein ya Admin se discount allow karwayein.');
         }
         discountApproved = true;
         discountApprovedBy = formData.adminApprovedByName || 'Admin Override';

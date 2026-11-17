@@ -127,7 +127,8 @@ class AuthManager {
         canEditTest: true,
         canDeleteTest: true,
         canEditDoctor: true,
-        canDeleteDoctor: true
+        canDeleteDoctor: true,
+        canGiveDiscount: true
       },
       active: true,
       createdAt: new Date().toISOString()
@@ -289,7 +290,8 @@ class AuthManager {
       canEditTest: !!(staffData.permissions?.canEditTest || staffData.canEditTest),
       canDeleteTest: !!(staffData.permissions?.canDeleteTest || staffData.canDeleteTest),
       canEditDoctor: !!(staffData.permissions?.canEditDoctor || staffData.canEditDoctor),
-      canDeleteDoctor: !!(staffData.permissions?.canDeleteDoctor || staffData.canDeleteDoctor)
+      canDeleteDoctor: !!(staffData.permissions?.canDeleteDoctor || staffData.canDeleteDoctor),
+      canGiveDiscount: !!(staffData.permissions?.canGiveDiscount || staffData.canGiveDiscount)
     };
 
     const newStaff = {
@@ -385,7 +387,8 @@ class AuthManager {
         canEditTest: !!updateData.permissions.canEditTest,
         canDeleteTest: !!updateData.permissions.canDeleteTest,
         canEditDoctor: !!updateData.permissions.canEditDoctor,
-        canDeleteDoctor: !!updateData.permissions.canDeleteDoctor
+        canDeleteDoctor: !!updateData.permissions.canDeleteDoctor,
+        canGiveDiscount: !!updateData.permissions.canGiveDiscount
       };
     }
 

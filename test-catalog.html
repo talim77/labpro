@@ -102,6 +102,9 @@
           <h1 class="page-title">Pathology Test Catalog & Standard Rates</h1>
         </div>
         <div class="topbar-right">
+          <button class="btn btn-secondary btn-sm" onclick="window.app.loadStandard50TestsPreset()" title="Load/Reset to exact 50 standard routine pathology tests">
+            ↺ Load 50 Standard Presets
+          </button>
           <button class="btn btn-primary btn-sm" onclick="window.app.openAddTestModal()">
             ➕ Add New Test
           </button>
@@ -121,9 +124,29 @@
                 Aapki Lab ke sabhi blood tests standard parameters aur normal ranges ke saath yahan hain. Aap naya test add kar sakte hain ya existing test ke rates badal sakte hain.
               </p>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="window.app.openAddTestModal()">
-              ➕ Add New Test
-            </button>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span id="test-catalog-count-badge" class="badge badge-info" style="font-size:12px; padding:6px 12px; font-weight:700;">Exact 50 Tests</span>
+              <button class="btn btn-primary btn-sm" onclick="window.app.openAddTestModal()">
+                ➕ Add New Test
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Search & Category Filter Bar -->
+          <div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; align-items:center; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0;">
+            <div style="flex:1; min-width:260px;">
+              <input type="text" id="test-catalog-search" class="form-control" placeholder="🔍 Search among 50 tests by Name, Code or Parameter (e.g. CBC, Lipid, Sugar, TSH, Dengue)..." oninput="window.app.filterTestCatalog()">
+            </div>
+            <div style="width:220px;">
+              <select id="test-catalog-category-filter" class="form-control" onchange="window.app.filterTestCatalog()">
+                <option value="all">All Departments / Categories</option>
+                <option value="Hematology">Hematology</option>
+                <option value="Biochemistry">Biochemistry</option>
+                <option value="Serology">Serology / Immunology</option>
+                <option value="Endocrinology">Endocrinology / Thyroid</option>
+                <option value="Clinical Pathology">Clinical Pathology (Urine/Stool)</option>
+              </select>
+            </div>
           </div>
 
           <div class="table-responsive">

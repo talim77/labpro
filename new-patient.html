@@ -176,8 +176,12 @@
             <h3 style="font-size:16px; font-weight:700; margin-bottom:16px; color:#0284c7;">2. Select Tests & Billing</h3>
 
             <div class="form-group">
-              <label class="form-label required">Select Blood / Pathology Tests</label>
-              <div id="billing-test-checkboxes" style="max-height:220px; overflow-y:auto; border:1px solid #e2e8f0; padding:10px; border-radius:6px; background:#f8fafc;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <label class="form-label required" style="margin-bottom:0;">Select Blood / Pathology Tests</label>
+                <span id="billing-test-selected-count" style="font-size:12px; font-weight:600; color:#0284c7;">0 selected</span>
+              </div>
+              <input type="text" id="billing-test-search" class="form-control" placeholder="🔍 Search test (e.g. CBC, Fasting Sugar, Lipid, Thyroid, Dengue, KFT, Urine)..." style="margin-bottom:8px; font-size:13px;" oninput="window.app.filterBillingTests(this.value)">
+              <div id="billing-test-checkboxes" style="max-height:260px; overflow-y:auto; border:1px solid #e2e8f0; padding:10px; border-radius:6px; background:#f8fafc;">
                 <!-- Populated dynamically -->
               </div>
             </div>
@@ -190,8 +194,11 @@
               </div>
 
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <label class="form-label" style="margin-bottom:0;">Special Discount (₹):</label>
-                <input type="number" id="patient-discount" class="form-control" style="width:120px; text-align:right;" value="0" oninput="window.app.recalculateBillingTotals()">
+                <div>
+                  <label class="form-label" style="margin-bottom:0;">Special Discount (₹):</label>
+                  <span id="discount-permission-indicator" style="display:block; font-size:10.5px; color:#64748b;"></span>
+                </div>
+                <input type="number" id="patient-discount" class="form-control" style="width:120px; text-align:right;" value="0" min="0" oninput="window.app.recalculateBillingTotals()">
               </div>
 
               <!-- Discount Approval Alert Box -->
