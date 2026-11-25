@@ -4,7 +4,7 @@
  * Automatically downloads and caches the entire application shell on first visit.
  */
 
-const CACHE_NAME = 'labpro-offline-v3';
+const CACHE_NAME = 'labpro-offline-v4';
 
 // List of all core application shell files required for 100% offline operation
 const PRECACHE_ASSETS = [

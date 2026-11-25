@@ -17,15 +17,15 @@ class ReportPrintManager {
     const params = report.parametersData || {};
     const paramCount = Object.keys(params).length || 1;
     
-    // Calibrated against Chromium rendering engine:
-    // Category title header = 7.5mm
-    // Row height = 6.2mm per parameter
-    // Remarks = 8.0mm if present
-    // Spacing between tests = 2.5mm
-    const categoryHeaderMM = 7.5;
-    const rowMM = 6.2;
-    const remarksMM = (report.remarks && report.remarks.trim()) ? 8.0 : 0;
-    const spacingMM = 2.5;
+    // Calibrated against Chromium rendering engine with 30-50% larger fonts:
+    // Category title header = 9.5mm (was 7.5mm)
+    // Row height = 8.2mm per parameter (was 6.2mm)
+    // Remarks = 11.0mm if present (was 8.0mm)
+    // Spacing between tests = 3.0mm (was 2.5mm)
+    const categoryHeaderMM = 9.5;
+    const rowMM = 8.2;
+    const remarksMM = (report.remarks && report.remarks.trim()) ? 11.0 : 0;
+    const spacingMM = 3.0;
 
     return categoryHeaderMM + (paramCount * rowMM) + remarksMM + spacingMM;
   }
@@ -42,14 +42,14 @@ class ReportPrintManager {
     // Total usable height in mm on an A4 sheet (296mm to prevent Chromium subpixel page-spill)
     const USABLE_PAGE_HEIGHT = 296 - padTop - padBottom;
 
-    // Header heights in mm (including patient demographic box & table thead)
-    // Mode 1: Lab Header (~34mm) + Patient Box (~21mm) + Dept Banner (~7mm) + Table Head (~7mm) = ~69mm
-    // Mode 2: Lab Header hidden. Patient Box (~21mm) + Dept Banner (~7mm) + Table Head (~7mm) = ~35mm
-    const PAGE1_HEADER_HEIGHT = isLetterhead ? 35 : 69;
-    const PAGE2_HEADER_HEIGHT = 44; // Continuation Banner (~9mm) + Patient Box (~21mm) + Dept Banner (~7mm) + Table Head (~7mm)
+    // Header heights in mm (including patient demographic box & table thead) with 30-50% larger typography:
+    // Mode 1: Lab Header (~42mm) + Patient Box (~28mm) + Dept Banner (~9mm) + Table Head (~9mm) = ~88mm
+    // Mode 2: Lab Header hidden. Patient Box (~28mm) + Dept Banner (~9mm) + Table Head (~9mm) = ~46mm
+    const PAGE1_HEADER_HEIGHT = isLetterhead ? 46 : 88;
+    const PAGE2_HEADER_HEIGHT = 58; // Continuation Banner (~12mm) + Patient Box (~28mm) + Dept Banner (~9mm) + Table Head (~9mm)
     
-    const SIGNATURES_FOOTER_HEIGHT = 28; // End note + Signatures + Disclaimer
-    const CONTINUED_NOTE_HEIGHT = 8;    // ">>> Report Continued on Page X >>>"
+    const SIGNATURES_FOOTER_HEIGHT = 36; // End note + Signatures + Disclaimer
+    const CONTINUED_NOTE_HEIGHT = 10;   // ">>> Report Continued on Page X >>>"
 
     // First check: Can all tests fit on a single page?
     const totalHeight = reports.reduce((sum, r) => sum + this.calculateTestHeightMM(r), 0);
@@ -125,7 +125,7 @@ class ReportPrintManager {
         <tr class="test-category-row">
           <td colspan="5">
             <strong>${report.testName}</strong>
-            ${report.category ? `<span style="font-size: 10px; font-weight: normal; color: #64748b; margin-left: 8px;">(${report.category})</span>` : ''}
+            ${report.category ? `<span style="font-size: 13.5px; font-weight: normal; color: #64748b; margin-left: 8px;">(${report.category})</span>` : ''}
           </td>
         </tr>
       `;
@@ -134,7 +134,7 @@ class ReportPrintManager {
       const paramNames = Object.keys(params);
 
       if (paramNames.length === 0) {
-        rowsHTML += `<tr><td colspan="5" style="text-align:center; padding: 6px; font-size: 10.5px;">Awaiting results...</td></tr>`;
+        rowsHTML += `<tr><td colspan="5" style="text-align:center; padding: 6px; font-size: 13.5px;">Awaiting results...</td></tr>`;
       } else {
         paramNames.forEach(pName => {
           const p = params[pName] || {};
@@ -160,7 +160,7 @@ class ReportPrintManager {
       if (report.remarks && report.remarks.trim()) {
         rowsHTML += `
           <tr style="background: #fafafa;">
-            <td colspan="5" style="padding: 4px 12px; font-size: 10px; color: #475569;">
+            <td colspan="5" style="padding: 6px 12px; font-size: 13.5px; color: #475569;">
               <em><strong>Remark / Interpretation:</strong> ${report.remarks}</em>
             </td>
           </tr>
@@ -242,7 +242,7 @@ class ReportPrintManager {
           <div class="report-header" style="${isLetterhead ? 'display:none;' : ''}">
             <div class="report-header-left">
               ${lab.logoBase64 ? `<img src="${lab.logoBase64}" class="report-lab-logo" alt="Lab Logo">` : `
-                <div style="width: 48px; height: 48px; background: #0284c7; color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 22px; border-radius: 4px;">
+                <div style="width: 60px; height: 60px; background: #0284c7; color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 28px; border-radius: 4px;">
                   +
                 </div>
               `}
@@ -256,7 +256,7 @@ class ReportPrintManager {
             <div class="report-header-right">
               <span class="reg-badge">REG NO: ${lab.regNo || 'N/A'}</span>
               <p style="margin-top: 3px;">ISO 9001:2015 Certified</p>
-              <p style="font-size: 9.5px; color: #64748b;">Computerized Lab Examination</p>
+              <p style="font-size: 13px; color: #64748b;">Computerized Lab Examination</p>
             </div>
           </div>
         `;
@@ -265,10 +265,10 @@ class ReportPrintManager {
         pageHeaderHTML = `
           <div class="report-continuation-header" style="border-bottom: 2px solid #0284c7; padding-bottom: 4px; margin-bottom: 8px; display:flex; justify-content:space-between; align-items:center;">
             <div>
-              <strong style="color: #0369a1; font-size: 13px; text-transform:uppercase;">${lab.name}</strong>
-              <span style="font-size: 10px; color: #64748b; margin-left: 8px;">(CONTINUATION REPORT)</span>
+              <strong style="color: #0369a1; font-size: 18px; text-transform:uppercase;">${lab.name}</strong>
+              <span style="font-size: 13.5px; color: #64748b; margin-left: 8px;">(CONTINUATION REPORT)</span>
             </div>
-            <div style="font-size: 10px; font-weight: 700; color: #0284c7;">
+            <div style="font-size: 13.5px; font-weight: 700; color: #0284c7;">
               PAGE ${pageNum} OF ${totalPages}
             </div>
           </div>
@@ -323,7 +323,7 @@ class ReportPrintManager {
               <div class="signature-name">${techName}</div>
               <div class="signature-role">Medical Lab Technologist</div>
             </div>
-            <div class="signature-block" style="text-align: center; color: #94a3b8; font-size: 9.5px;">
+            <div class="signature-block" style="text-align: center; color: #94a3b8; font-size: 12.5px;">
               <p>Verified Electronically</p>
               <p>No Physical Signature Needed</p>
             </div>
@@ -341,7 +341,7 @@ class ReportPrintManager {
         `;
       } else {
         pageFooterHTML = `
-          <div style="border-top: 1px dashed #cbd5e1; padding-top: 6px; margin-top: auto; display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #64748b;">
+          <div style="border-top: 1px dashed #cbd5e1; padding-top: 6px; margin-top: auto; display: flex; justify-content: space-between; align-items: center; font-size: 13.5px; color: #64748b;">
             <span><em>>>> Report continued on Page ${pageNum + 1} >>></em></span>
             <strong>Page ${pageNum} of ${totalPages}</strong>
           </div>
@@ -403,20 +403,20 @@ class ReportPrintManager {
 
     const testsHTML = (patient.testNames || []).map((t, idx) => `
       <tr>
-        <td style="padding: 5px 8px; border-bottom: 1px solid #e2e8f0;">${idx + 1}. ${t}</td>
-        <td style="padding: 5px 8px; border-bottom: 1px solid #e2e8f0; text-align: right;">-</td>
+        <td style="padding: 7px 10px; border-bottom: 1px solid #e2e8f0; font-size: 13.5px;">${idx + 1}. ${t}</td>
+        <td style="padding: 7px 10px; border-bottom: 1px solid #e2e8f0; text-align: right; font-size: 13.5px;">-</td>
       </tr>
     `).join('');
 
     return `
-      <div style="background: #fff; width: 140mm; margin: 0 auto; padding: 12mm; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 11.5px; color: #0f172a;">
-        <div style="text-align: center; border-bottom: 2px dashed #94a3b8; padding-bottom: 8px; margin-bottom: 10px;">
-          <h2 style="margin: 0; font-size: 17px; color: #0369a1;">${lab.name}</h2>
-          <p style="margin: 2px 0; font-size: 10.5px; color: #64748b;">${lab.address || ''} | Tel: ${lab.phone || ''}</p>
-          <h3 style="margin: 5px 0 0; font-size: 12px; text-transform: uppercase;">Payment Receipt / Invoice</h3>
+      <div style="background: #fff; width: 155mm; margin: 0 auto; padding: 14mm; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 14.5px; color: #0f172a; box-sizing: border-box;">
+        <div style="text-align: center; border-bottom: 2px dashed #94a3b8; padding-bottom: 10px; margin-bottom: 12px;">
+          <h2 style="margin: 0; font-size: 24px; color: #0369a1; text-transform: uppercase; font-weight: 800;">${lab.name}</h2>
+          <p style="margin: 3px 0; font-size: 13.5px; color: #64748b;">${lab.address || ''} | Tel: ${lab.phone || ''}</p>
+          <h3 style="margin: 8px 0 0; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Payment Receipt / Invoice</h3>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 10px; font-size: 10.5px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; margin-bottom: 14px; font-size: 13.5px;">
           <div><strong>Bill No:</strong> ${patient.billNo}</div>
           <div><strong>Date:</strong> ${dateStr}</div>
           <div><strong>Patient:</strong> ${patient.name} (${patient.age} ${patient.ageUnit}/${patient.gender[0].toUpperCase()})</div>
@@ -425,11 +425,11 @@ class ReportPrintManager {
           <div><strong>Phone:</strong> ${patient.phone || '-'}</div>
         </div>
 
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 10.5px;">
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 13.5px;">
           <thead>
-            <tr style="background: #f1f5f9; border-bottom: 1px solid #94a3b8;">
-              <th style="padding: 5px 8px; text-align: left;">Test Description</th>
-              <th style="padding: 5px 8px; text-align: right;">Amount</th>
+            <tr style="background: #f1f5f9; border-bottom: 1.5px solid #94a3b8;">
+              <th style="padding: 7px 10px; text-align: left; font-size: 13.5px;">Test Description</th>
+              <th style="padding: 7px 10px; text-align: right; font-size: 13.5px;">Amount</th>
             </tr>
           </thead>
           <tbody>
@@ -437,30 +437,30 @@ class ReportPrintManager {
           </tbody>
         </table>
 
-        <div style="border-top: 1px solid #0f172a; padding-top: 6px; font-size: 11px;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+        <div style="border-top: 1.5px solid #0f172a; padding-top: 8px; font-size: 14px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
             <span>Subtotal (Gross):</span>
             <span>₹${(patient.subtotal !== undefined ? patient.subtotal : (patient.finalAmount + (patient.discountAmount || 0))).toFixed(2)}</span>
           </div>
           ${patient.discountAmount > 0 ? `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 3px; color: #16a34a;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px; color: #16a34a; font-weight: 600;">
               <span>Discount (${patient.discountApprovedBy || 'Approved'}):</span>
               <span>- ₹${patient.discountAmount.toFixed(2)}</span>
             </div>
           ` : ''}
-          <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-weight: 700; font-size: 13px; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-weight: 800; font-size: 17px; border-top: 1px dashed #cbd5e1; padding-top: 6px;">
             <span>Net Payable:</span>
             <span>₹${patient.finalAmount.toFixed(2)}</span>
           </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 3px; color: #0284c7; font-weight: 600;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px; color: #0284c7; font-weight: 700; font-size: 15px;">
             <span>Amount Paid (${patient.paymentMode || 'Cash'}):</span>
             <span>₹${(patient.paidAmount !== undefined ? patient.paidAmount : patient.finalAmount).toFixed(2)}</span>
           </div>
           ${(patient.paymentHistory && patient.paymentHistory.length > 0) ? `
-            <div style="margin: 4px 0; padding: 4px 6px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 9.5px;">
+            <div style="margin: 6px 0; padding: 6px 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 12.5px;">
               <strong style="color: #334155;">Payment Transactions:</strong>
               ${patient.paymentHistory.map(ph => `
-                <div style="display: flex; justify-content: space-between; color: #64748b; margin-top: 2px;">
+                <div style="display: flex; justify-content: space-between; color: #64748b; margin-top: 3px;">
                   <span>${new Date(ph.date).toLocaleDateString('en-IN', { day:'2-digit', month:'short' })} (${ph.mode}${ph.notes ? ' - ' + ph.notes : ''}):</span>
                   <span style="font-weight: 600; color: #0f172a;">₹${parseFloat(ph.amount).toFixed(2)}</span>
                 </div>
@@ -468,20 +468,20 @@ class ReportPrintManager {
             </div>
           ` : ''}
           ${(patient.finalAmount - (patient.paidAmount !== undefined ? patient.paidAmount : patient.finalAmount)) > 0.01 ? `
-            <div style="display: flex; justify-content: space-between; margin-top: 4px; padding: 4px 6px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; color: #dc2626; font-weight: 800; font-size: 12px;">
+            <div style="display: flex; justify-content: space-between; margin-top: 6px; padding: 6px 8px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; color: #dc2626; font-weight: 800; font-size: 15.5px;">
               <span>BALANCE DUE:</span>
               <span>₹${(patient.finalAmount - (patient.paidAmount !== undefined ? patient.paidAmount : patient.finalAmount)).toFixed(2)}</span>
             </div>
           ` : `
-            <div style="text-align: right; color: #16a34a; font-weight: 800; font-size: 11px; margin-top: 4px; padding: 3px 6px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px;">
+            <div style="text-align: right; color: #16a34a; font-weight: 800; font-size: 14px; margin-top: 6px; padding: 5px 8px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px;">
               ✓ FULL PAYMENT RECEIVED [PAID IN FULL]
             </div>
           `}
         </div>
 
-        <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 9.5px; color: #64748b;">
+        <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 12.5px; color: #64748b;">
           <div>Operator: ${patient.createdBy}</div>
-          <div style="text-align: right; border-top: 1px solid #475569; padding-top: 4px; width: 110px;">
+          <div style="text-align: right; border-top: 1.5px solid #475569; padding-top: 5px; width: 140px; font-weight: 600;">
             Authorized Signature
           </div>
         </div>
